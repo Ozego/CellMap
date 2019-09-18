@@ -14,13 +14,12 @@ public class CellMap : MonoBehaviour
     private int[,] map; 
     private Texture2D dTexture;
     private RenderTexture rTexture;
-
+    private GameObject DisplayQuad;
 
     void Start()
     {
-        Camera.main.orthographicSize = height/2;
         GenerateMap();
-        Display();
+        GenerateDisplay();
     }
     void Update()
     {
@@ -29,14 +28,18 @@ public class CellMap : MonoBehaviour
             GenerateMap(); 
             UpdateDisplayTexture();
         };
-        for (int i = 0; i < 4; i++)
+        if(Time.frameCount%256>128) GameOfLifeCycle();
+        else
         {
-            Smooth();
+            for (int i = 0; i < 4; i++)
+            {
+                Smooth();
+            }
+            if(Time.frameCount%512==0) fillProbability = (int)Random.Range(0,4);
+            if(Time.frameCount%256==0) GenerateMap();
+            if(Time.frameCount%64 ==0) SmoothDarken();
+            if(Time.frameCount%12 ==0) for (int i = 0; i < 4; i++) SmoothLighten();
         }
-        if(Time.frameCount%512==0) fillProbability = (int)Random.Range(0,4);
-        if(Time.frameCount%128==0) GenerateMap();
-        if(Time.frameCount%64 ==0) SmoothDarken();
-        if(Time.frameCount%12 ==0) for (int i = 0; i < 4; i++) SmoothLighten();
         UpdateDisplayTexture();
     }
     
@@ -77,10 +80,10 @@ public class CellMap : MonoBehaviour
                 map[x,y] = Mathf.Max(map[x,y],buffer[x,y]);
             }
         }
-        // for (int i = 0; i < 0; i++)
-        // {
-        //     Smooth();
-        // }
+        for (int i = 0; i < 5; i++)
+        {
+            Smooth();
+        }
     }
 
     void RectFill(int fillWidth, int fillHeight, int xPos, int yPos)
@@ -155,6 +158,33 @@ public class CellMap : MonoBehaviour
                 // bufferMap[x,y] = GetVonNeumannCount(x,y,3) > 12 ? 1 : 0;
                 // bufferMap[x,y] = GetVonNeumannCount(x,y,3) > 12 | GetMooreCount(x,y,1) > 5 ? 1 : 0;
                 // bufferMap[x,y] = GetVonNeumannCount(x,y,4) > 32 | GetMooreCount(x,y,2) > 12 ? 1 : 0;
+            }
+        }
+        map = (int[,])bufferMap.Clone();
+    }
+    void GameOfLifeCycle()
+    {
+        var bufferMap = (int[,])map.Clone();
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                var count = GetMooreCount(x,y,1);
+                if(map[x,y]==1)
+                {
+                    switch (count)
+                    {
+                        case 3: 
+                        case 4: bufferMap[x,y] = 1;
+                        break;
+                        default: bufferMap[x,y] = 0; 
+                        break;
+                    }
+                }
+                else
+                {
+                    bufferMap[x,y] = count== 3 ? 1 : 0;
+                }
             }
         }
         map = (int[,])bufferMap.Clone();
@@ -269,10 +299,9 @@ public class CellMap : MonoBehaviour
         }
     }
 
-
-    private GameObject DisplayQuad;
-    void Display()
+    void GenerateDisplay()
     {
+        Camera.main.orthographicSize = height/2;
         DisplayQuad = new GameObject("Display");
         DisplayQuad.transform.parent = transform;
         var mFilter = DisplayQuad.AddComponent<MeshFilter>();

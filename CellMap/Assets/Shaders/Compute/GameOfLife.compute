@@ -1,0 +1,49 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel GameOfLife
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+uint width;
+uint height;
+Texture2D<float4> Prev;
+RWTexture2D<float4> Result;
+
+int GetPositiveModulo(int c, int m)
+{
+    return (c%m+m)%m;
+}
+int GetXTiled(int x)
+{
+    return GetPositiveModulo(x,width);
+}
+int GetYTiled(int y)
+{
+    return GetPositiveModulo(y,height);
+}
+int2 GetIDTiled (int2 id)
+{
+    return int2(GetXTiled(id.x),GetYTiled(id.y));
+}
+[numthreads(8,8,1)]
+void GameOfLife (uint3 id : SV_DispatchThreadID)
+{
+    float4 outCol = float4(0.,0.,0.,0.);
+    int count = 0;
+    for (int x=-1;x<=1;x++)
+    {
+        for (int y=-1;y<=1;y++)
+        {
+            int2 posOffset = int2(x,y);
+            count += round(Prev[GetIDTiled(id.xy+posOffset)].r);
+        }
+    }
+    if(Prev[id.xy].r<0.5&&count==3)
+    {
+        outCol=float4(1.,0.,0.,0.);
+    };
+    if(Prev[id.xy].r>0.5&&(count==3||count==4))
+    {
+        outCol=float4(1.,0.,0.,0.);
+    };
+    Result[id.xy] = outCol;
+}

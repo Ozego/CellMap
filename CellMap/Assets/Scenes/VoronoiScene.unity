@@ -214,7 +214,7 @@ GameObject:
   - component: {fileID: 1203743335}
   - component: {fileID: 1203743334}
   m_Layer: 0
-  m_Name: VoronoiMap
+  m_Name: NodeMap
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -232,9 +232,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c32e6b74bfe902942a1cc925abfdd5f7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  minDist: 0.1
+  generateMaps: 0
+  infectNOW: 0
+  minDist: 0.05
   mapSize: {x: 10, y: 10}
   nodeCheckLimit: 8
+  noiseST: {x: 1, y: 1}
+  infectionProbability: 0.001
+  drawNode: 0
+  drawParent: 0
+  drawDirection: 0
+  drawInfection: 1
 --- !u!4 &1203743335
 Transform:
   m_ObjectHideFlags: 0

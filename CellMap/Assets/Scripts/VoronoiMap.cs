@@ -18,6 +18,7 @@ public class VoronoiMap : MonoBehaviour
     [SerializeField] private bool drawParent = false;
     [SerializeField] private bool drawDirection = false;
     [SerializeField] private bool drawInfection = false;
+    
     private const float SQR2 = 1.4142135623730951f; // square root of 2
     private string hiddenSeed = "";
     private float cellSize;

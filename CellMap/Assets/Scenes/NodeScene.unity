@@ -229,7 +229,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1203743333}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c32e6b74bfe902942a1cc925abfdd5f7, type: 3}
+  m_Script: {fileID: 11500000, guid: 9908218a29bcd92498f9b48f56937dbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   generateMaps: 0
@@ -237,8 +237,10 @@ MonoBehaviour:
   minDist: 0.05
   mapSize: {x: 10, y: 10}
   nodeCheckLimit: 8
-  noiseST: {x: 1, y: 1}
+  noiseST: {x: 0.1, y: 0.1}
   infectionProbability: 0.001
+  infectionStrenght: 16
+  infectionSpread: 0.75
   drawNode: 0
   drawParent: 0
   drawDirection: 0

@@ -23,6 +23,7 @@
 
             #include "UnityCG.cginc"
             #include "TrigConst.cginc"
+            #include "TrigFunction.cginc"
 
             fixed3 _A;
             fixed3 _B;
@@ -49,14 +50,11 @@
                 UNITY_TRANSFER_FOG(o,o.vertex);
                 return o;
             }
-            fixed3 trigGrad (float t, fixed3 a, fixed3 b, fixed3 c, fixed3 d)
-            {
-                return a + b * cos( TAU * ( c * t + d ) );
-            }
+
             fixed4 frag (v2f i) : SV_Target
             {
                 fixed4 col = fixed4(0.,0.,0.,1.);
-                col.rgb = trigGrad
+                col.rgb = TrigGrad
                 (
                     i.uv.y,
                     fixed3( 0.50 , 0.50 , 0.50 ),
@@ -66,7 +64,7 @@
                 );
                 if(i.uv.x > .025)
                 {
-                    col.rgb = trigGrad
+                    col.rgb = TrigGrad
                     (
                         i.uv.y, 
                         _A * i.uv.x , 

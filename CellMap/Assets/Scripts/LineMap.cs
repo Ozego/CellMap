@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Random = System.Random;
+using Random = UnityEngine.Random;
 public class LineMap : MonoBehaviour
 {
     // itterative line renderer 
@@ -30,53 +30,111 @@ public class LineMap : MonoBehaviour
     //render data
 
     [SerializeField] Vector2Int mSize; 
+    [SerializeField] private int frameCount;
+    // [SerializeField] private Shader sLine;
+    [SerializeField] private ComputeShader csLine;
+    [SerializeField] private string seed;
+
     private MeshRenderer mRenderer;
     private GameObject qDisplay;
     private List<RenderTexture> rTextures = new List<RenderTexture>();
-    [SerializeField]private int frameCount;
-    private int rFrame; 
+    private int rFrame = 0; 
 
-    [SerializeField] private Shader sLine;
-    [SerializeField] private ComputeShader csLine;
     private List<Line> lines = new List<Line>();
+    private int lineCount;
     private ComputeBuffer lineBuffer;
+    private int threadX = 8;
 
-    public class Line
+    public struct Line 
     {
         public Vector2 _start;
         public Vector2 _end;
-        public Vector4 _color;
-        Line(Vector2 start, Vector2 end, Color color)
+        public Color _color;
+
+        public Vector2 localVector{ get{ return _end - _start; } }
+        public static int byteSize{ get{ return sizeof(float)*8; } }
+    }
+    void Start()
+    {
+        if(seed==""|seed==null)
         {
-            _start = start;
-            _end = end;
-            _color = color;
+            seed = System.DateTime.Now.ToString();
         }
-        public Vector2 localVector
+        Random.InitState(seed.GetHashCode());
+        GenerateDisplay();
+        GenerateLines();
+        lineBuffer = new ComputeBuffer(lineCount, Line.byteSize, ComputeBufferType.Default);
+        ComputeStepFrame();
+    }
+
+    private void ComputeStepFrame()
+    {
+        lineBuffer.SetData(lines);
+        int kernelID = csLine.FindKernel("DrawLine");
+
+        csLine.SetInt("width", mSize.x);
+        csLine.SetInt("height", mSize.y);
+        csLine.SetBuffer(kernelID, "LineBuffer", lineBuffer);
+
+        csLine.SetTexture(kernelID, "OutTexture", rTextures[rFrame]);
+        csLine.Dispatch(kernelID, lineCount / threadX, 1, 1);
+
+        mRenderer.material.SetTexture("_MainTex", rTextures[rFrame]); 
+    }
+
+
+    private void GenerateLines()
+    {
+        Vector2 pos = new Vector2(mSize.x/2f,mSize.y/2f);
+        for (int i = 0; i < 500000; i++) //500000 limit
         {
-            get 
-            {
-                return _end - _start;
-            }
+            var mLine = new Line();
+            mLine._start = pos;
+            pos += new Vector2(Random.value*50f-25f,Random.value*50f-25f);
+            mLine._end = pos;
+            mLine._color = Random.ColorHSV(0f,1f,.5f,1f,1f,1f);
+            lines.Add(mLine);
         }
+        cielLineCount();
+    }
+
+    private void cielLineCount()
+    {
+        lineCount = lines.Count;
+        if((lineCount % threadX) > 0)
+        {
+            lineCount += threadX - (lineCount % threadX);
+        }
+        // Debug.Log("Actual Line count: " + lines.Count);
+        // Debug.Log("Line count for gpu: " + lineCount);
     }
     private void updateRFrame()
     {
         rFrame++;
         rFrame = rFrame%rTextures.Count;
     }
-    void Start()
-    {
-        
-    }
 
     // Update is called once per frame
-    void Update()
+    // void Update()
+    // {
+
+    // }
+    void OnDrawGizmos()
     {
-        
+            // Gizmos.color = Color.red;
+            // foreach (var line in lines)
+            // {
+            //     Gizmos.DrawLine
+            //     (
+            //         new Vector3(line._start.x-mSize.x/2f,0f,line._start.y-mSize.y/2f),
+            //         new Vector3(line._end.x-mSize.x/2f,0f,line._end.y-mSize.y/2f)
+            //     );
+            // }
     }
+
     private void GenerateDisplay()
     {
+        //Boilerplate display 1px Rendertexture per 1 unit 
         Camera.main.orthographicSize = mSize.y / 2;
         qDisplay = new GameObject("Display");
         qDisplay.transform.parent = transform;
@@ -85,17 +143,17 @@ public class LineMap : MonoBehaviour
         var mGen = new MeshGenerator();
         mFilter.mesh = mGen.GetQuad(mSize.x, mSize.y);
         mRenderer.material = new Material(Shader.Find("Unlit/Texture"));
-
         
         for (int i = 0; i < frameCount; i++)
         {
-            var rT = new RenderTexture(mSize.x, mSize.y, 24);
+            var rT = new RenderTexture(mSize.x, mSize.y, 8);
             rT.enableRandomWrite = true;
             rT.filterMode = FilterMode.Point;
             rT.Create();
             rTextures.Add( rT );
-        
         }
         mRenderer.material.SetTexture("_MainTex", rTextures[0]);
     }
+
+
 }

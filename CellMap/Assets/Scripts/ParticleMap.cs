@@ -10,6 +10,8 @@ public class ParticleMap : MonoBehaviour
     [SerializeField] private ComputeShader pShader;
     [SerializeField] bool evaluateDebugFunction;
 
+    List<RenderTexture> rTextures;
+
     void OnValidate()
     {
         if(evaluateDebugFunction)

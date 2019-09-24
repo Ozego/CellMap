@@ -74,17 +74,21 @@ public class LineMap : MonoBehaviour
     private void Update()
     {
         updateRFrame();
-        // int noiseKernelID = csNoise.FindKernel("DrawNoise");
-        // csNoise.SetInt("Frame", Time.frameCount);
-        // csNoise.SetTexture(noiseKernelID, "OutTexture", rTextures[rFrame]);
-        // csNoise.Dispatch(noiseKernelID, mSize.x/8, mSize.y/8, 1);
-        int rasterizeKernelID = csLine.FindKernel("DrawLine");
-        int moveKernelID = csLine.FindKernel("MoveLines");
-        csLine.SetBuffer(rasterizeKernelID, "LineBuffer", lineBuffer);
-        csLine.Dispatch(moveKernelID, lineCount / threadX, 1, 1);
+        int noiseKernelID = csNoise.FindKernel("DrawNoise");
+        csNoise.SetInt("Frame", Time.frameCount);
+        csNoise.SetTexture(noiseKernelID, "OutTexture", rTextures[rFrame]);
+        csNoise.Dispatch(noiseKernelID, mSize.x/8, mSize.y/8, 1);
+
+
+        // int rasterizeKernelID = csLine.FindKernel("DrawLine");
+        // int moveKernelID = csLine.FindKernel("MoveLines");
         // csLine.SetBuffer(rasterizeKernelID, "LineBuffer", lineBuffer);
-        csLine.SetTexture(rasterizeKernelID, "OutTexture", rTextures[rFrame]);
-        csLine.Dispatch(rasterizeKernelID, lineCount / threadX, 1, 1);
+        // csLine.Dispatch(moveKernelID, lineCount / threadX, 1, 1);
+
+        // csLine.SetBuffer(rasterizeKernelID, "LineBuffer", lineBuffer);
+
+        // csLine.SetTexture(rasterizeKernelID, "OutTexture", rTextures[rFrame]);
+        // csLine.Dispatch(rasterizeKernelID, lineCount / threadX, 1, 1);
 
         mRenderer.material.SetTexture("_MainTex", rTextures[rFrame]); 
     }

@@ -1,0 +1,10 @@
+﻿#pragma kernel DrawNoise
+#include "Assets\Shaders\Compute\rngInclude.compute"
+RWTexture2D<float4> OutTexture;
+
+int Frame;
+[numthreads(8,8,1)]
+void DrawNoise (uint3 id : SV_DispatchThreadID)
+{
+    OutTexture[id.xy] = float4(rng2D(id.xy, Frame), 0., 0.0, 1.0);
+}

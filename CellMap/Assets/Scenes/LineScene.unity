@@ -310,10 +310,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 22869fbe18f1351468f49f53b483216c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mSize: {x: 4096, y: 4096}
+  mSize: {x: 1024, y: 1024}
   frameCount: 2
+  csNoise: {fileID: 7200000, guid: 26f4fec843915544a9cbbe7a3121cdd3, type: 3}
   csLine: {fileID: 7200000, guid: d8bdec0e2a2c23845833c589a9d7806d, type: 3}
-  seed: 
+  seed: es
 --- !u!4 &1216274578
 Transform:
   m_ObjectHideFlags: 0

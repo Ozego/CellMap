@@ -32,6 +32,7 @@ public class LineMap : MonoBehaviour
     [SerializeField] Vector2Int mSize; 
     [SerializeField] private int frameCount;
     // [SerializeField] private Shader sLine;
+    [SerializeField] private ComputeShader csNoise;
     [SerializeField] private ComputeShader csLine;
     [SerializeField] private string seed;
 
@@ -66,18 +67,44 @@ public class LineMap : MonoBehaviour
         lineBuffer = new ComputeBuffer(lineCount, Line.byteSize, ComputeBufferType.Default);
         ComputeStepFrame();
     }
+    void OnDestroy()
+    {
+        lineBuffer.Release();
+    }
+    private void Update()
+    {
+        updateRFrame();
+        // int noiseKernelID = csNoise.FindKernel("DrawNoise");
+        // csNoise.SetInt("Frame", Time.frameCount);
+        // csNoise.SetTexture(noiseKernelID, "OutTexture", rTextures[rFrame]);
+        // csNoise.Dispatch(noiseKernelID, mSize.x/8, mSize.y/8, 1);
+        int rasterizeKernelID = csLine.FindKernel("DrawLine");
+        int moveKernelID = csLine.FindKernel("MoveLines");
+        csLine.SetBuffer(rasterizeKernelID, "LineBuffer", lineBuffer);
+        csLine.Dispatch(moveKernelID, lineCount / threadX, 1, 1);
+        // csLine.SetBuffer(rasterizeKernelID, "LineBuffer", lineBuffer);
+        csLine.SetTexture(rasterizeKernelID, "OutTexture", rTextures[rFrame]);
+        csLine.Dispatch(rasterizeKernelID, lineCount / threadX, 1, 1);
+
+        mRenderer.material.SetTexture("_MainTex", rTextures[rFrame]); 
+    }
 
     private void ComputeStepFrame()
     {
+        // int noiseKernelID = csNoise.FindKernel("DrawNoise");
+        // csNoise.SetTexture(noiseKernelID, "OutTexture", rTextures[rFrame]);
+        // csNoise.Dispatch(noiseKernelID, mSize.x/8, mSize.y/8, 1);
+        //recompile
+        
         lineBuffer.SetData(lines);
-        int kernelID = csLine.FindKernel("DrawLine");
+        int rasterizeKernelID = csLine.FindKernel("DrawLine");
 
         csLine.SetInt("width", mSize.x);
         csLine.SetInt("height", mSize.y);
-        csLine.SetBuffer(kernelID, "LineBuffer", lineBuffer);
+        csLine.SetBuffer(rasterizeKernelID, "LineBuffer", lineBuffer);
 
-        csLine.SetTexture(kernelID, "OutTexture", rTextures[rFrame]);
-        csLine.Dispatch(kernelID, lineCount / threadX, 1, 1);
+        csLine.SetTexture(rasterizeKernelID, "OutTexture", rTextures[rFrame]);
+        csLine.Dispatch(rasterizeKernelID, lineCount / threadX, 1, 1);
 
         mRenderer.material.SetTexture("_MainTex", rTextures[rFrame]); 
     }
@@ -86,7 +113,7 @@ public class LineMap : MonoBehaviour
     private void GenerateLines()
     {
         Vector2 pos = new Vector2(mSize.x/2f,mSize.y/2f);
-        for (int i = 0; i < 500000; i++) //500000 limit
+        for (int i = 0; i < 500; i++) //500000 limit
         {
             var mLine = new Line();
             mLine._start = pos;
@@ -114,11 +141,7 @@ public class LineMap : MonoBehaviour
         rFrame = rFrame%rTextures.Count;
     }
 
-    // Update is called once per frame
-    // void Update()
-    // {
 
-    // }
     void OnDrawGizmos()
     {
             // Gizmos.color = Color.red;

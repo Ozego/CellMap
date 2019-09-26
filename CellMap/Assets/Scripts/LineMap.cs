@@ -6,6 +6,7 @@ using Random = UnityEngine.Random;
 public class LineMap : MonoBehaviour
 {
     // itterative line renderer 
+    // todo: line pattern renderer:
     // -------------------------------------------------------------------------
     // -------------------------------------------------------------------------
     // fish scale pattern 
@@ -81,38 +82,47 @@ public class LineMap : MonoBehaviour
     }
     private void Update()
     {
-        
-        // // int noiseKernelID = csNoise.FindKernel("DrawNoise");
-        // // csNoise.SetInt("Frame", Time.cFrameCount);
-        // // csNoise.SetTexture(noiseKernelID, "OutTexture", rTextures[cFramePointer]);
-        // // csNoise.Dispatch(noiseKernelID, mSize.x/8, mSize.y/8, 1);
+
         csLine.SetInt("frame", Time.frameCount);
-    
-        int clearKernelID = csLine.FindKernel("Clear");
-        csLine.SetTexture(clearKernelID, "OutTexture", rTextures[0]);
-        // csLine.Dispatch(clearKernelID, mSize.x/threadSize, mSize.y/threadSize, 1);
 
-        // updatecFramePointer();
+        int fadeKernelID = csLine.FindKernel("Fade");
+        csLine.SetTexture(fadeKernelID, "OutTexture", rTextures[0]);
+        csLine.Dispatch(fadeKernelID, mSize.x/threadSize, mSize.y/threadSize, 1);
 
+        if(Input.GetMouseButtonDown(0))
+        {
+            csLine.SetFloat("Chaos",Random.value*Random.value*20f);
+            int clearKernelID = csLine.FindKernel("Clear");
+            csLine.SetTexture(clearKernelID, "OutTexture", rTextures[0]);
+            csLine.Dispatch(clearKernelID, mSize.x/threadSize, mSize.y/threadSize, 1);
+            int alignKernelID = csLine.FindKernel("AlignLines");
+            csLine.SetBuffer(alignKernelID, "LineBuffer", lineBuffers[0]);
+            csLine.Dispatch(alignKernelID, lineCount / threadSize, 1, 1);
+        }   
+        
         int rasterizeKernelID = csLine.FindKernel("DrawLine");
-        csLine.SetBuffer(rasterizeKernelID, "LineBuffer", lineBuffers[0]);
-        csLine.SetTexture(rasterizeKernelID, "OutTexture", rTextures[0]);
-        csLine.Dispatch(rasterizeKernelID, lineCount / threadSize, 1, 1);
-
-        mRenderer.material.SetTexture("_MainTex", rTextures[0]); 
-
         int moveKernelID = csLine.FindKernel("MoveLines");
-        csLine.SetBuffer(moveKernelID, "LineBuffer", lineBuffers[0]);
-        csLine.Dispatch(moveKernelID, lineCount / threadSize, 1, 1);
+        // updatecFramePointer();
+        for (int i = 0; i < 1; i++)
+        {
+            csLine.SetBuffer(rasterizeKernelID, "LineBuffer", lineBuffers[0]);
+            csLine.SetTexture(rasterizeKernelID, "OutTexture", rTextures[0]);
+            csLine.Dispatch(rasterizeKernelID, lineCount / threadSize, 1, 1);
+
+            mRenderer.material.SetTexture("_MainTex", rTextures[0]); 
+
+            csLine.SetBuffer(moveKernelID, "LineBuffer", lineBuffers[0]);
+            csLine.Dispatch(moveKernelID, lineCount / threadSize, 1, 1);
+        }
     }
 
     private void ComputeStepFrame()
     {
         lineBuffers[cFramePointer].SetData(lines);
         int rasterizeKernelID = csLine.FindKernel("DrawLine");
-
         csLine.SetInt("width", mSize.x);
         csLine.SetInt("height", mSize.y);
+        csLine.SetFloat("chaos",1f);
         csLine.SetBuffer(rasterizeKernelID, "LineBuffer", lineBuffers[0]);
 
         csLine.SetTexture(rasterizeKernelID, "OutTexture", rTextures[0]);
@@ -151,7 +161,7 @@ public class LineMap : MonoBehaviour
         {
             var rT = new RenderTexture(mSize.x, mSize.y, 8);
             rT.enableRandomWrite = true;
-            rT.filterMode = FilterMode.Trilinear;
+            rT.filterMode = FilterMode.Point;
             rT.Create();
             rTextures.Add(rT);
         }
@@ -160,7 +170,7 @@ public class LineMap : MonoBehaviour
     private void GenerateLines()
     {
         Vector2 pos = new Vector2( mSize.x/2f, mSize.y/2f );
-        for (int i = 0; i < 4096; i++) //500000 limit
+        for (int i = 0; i < 1000; i++) //500000 limit
         {
             var mLine = new Line();
             mLine._start = pos;

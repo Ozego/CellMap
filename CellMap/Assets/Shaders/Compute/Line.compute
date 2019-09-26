@@ -1,4 +1,6 @@
-﻿#pragma kernel Clear
+﻿#pragma kernel Fade
+#pragma kernel Clear
+#pragma kernel AlignLines
 #pragma kernel DrawLine
 #pragma kernel MoveLines
 #include "Assets\Shaders\Compute\rngInclude.compute"
@@ -15,19 +17,36 @@ RWTexture2D<float4> OutTexture;
 int width;
 int height;
 int frame;
+float chaos;
 
+[numthreads(8,8,1)]
+void Fade (uint3 id : SV_DispatchThreadID)
+{
+    float4 col = OutTexture[id.xy];
+    col.rgb*=.999;
+    col.rgb *= col.rgb;
+    col.a=1.;
+    OutTexture[id.xy]=col;
+}
 [numthreads(8,8,1)]
 void Clear (uint3 id : SV_DispatchThreadID)
 {
-    OutTexture[id.xy]=float4(0.,0.,0.,0.);
+    OutTexture[id.xy]=float4(1.,.9,.1,1.);
 }
 [numthreads(8,1,1)]
 void MoveLines (uint3 id : SV_DispatchThreadID)
 {
     Line l = LineBuffer[id.x];
     float2 movement = l._end - l._start;
-    l._start += movement /** .1*/;
-    l._end   += movement /** .1*/ + rngVector2(frame+id.x,id.x) * 2.;;
+    l._start += movement ;
+    l._end   += abs(length(movement)+(rngFloat(id.x+1,frame)-.5)*chaos) * normalize(movement + rngVector2(frame+id.x,id.x)*chaos);
+    LineBuffer[id.x] = l;
+};
+[numthreads(8,1,1)]
+void AlignLines (uint3 id : SV_DispatchThreadID)
+{
+    Line l = LineBuffer[id.x];
+    l._end = l._start + rngVector2(frame,0)*rngFloat(frame,1)*20.;
     LineBuffer[id.x] = l;
 };
 
@@ -60,7 +79,9 @@ void DrawLine (uint3 id : SV_DispatchThreadID)
     int numerator = longest >> 1 ; // bitwise operation: longest/2 floored
     for (int i=0, x = l._start.x, y = l._start.y;i<=longest;i++) 
     {
-        OutTexture[int2(x,y)] = col;
+        int modX = (x%width+width)%width;
+        int modY = (y%height+height)%height;
+        OutTexture[int2(modX,modY)] = l._color;//col;
         numerator += shortest ;
         if (!(numerator<longest)) {
             numerator -= longest ;

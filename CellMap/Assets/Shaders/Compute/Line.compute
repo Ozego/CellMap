@@ -1,4 +1,5 @@
-﻿#pragma kernel DrawLine
+﻿#pragma kernel Clear
+#pragma kernel DrawLine
 #pragma kernel MoveLines
 #include "Assets\Shaders\Compute\rngInclude.compute"
 
@@ -13,17 +14,23 @@ RWStructuredBuffer<Line> LineBuffer;
 RWTexture2D<float4> OutTexture;
 int width;
 int height;
+int frame;
 
-
+[numthreads(8,8,1)]
+void Clear (uint3 id : SV_DispatchThreadID)
+{
+    OutTexture[id.xy]=float4(0.,0.,0.,0.);
+}
 [numthreads(8,1,1)]
 void MoveLines (uint3 id : SV_DispatchThreadID)
 {
     Line l = LineBuffer[id.x];
     float2 movement = l._end - l._start;
-    l._start = l._end;
-    l._end = l._start + movement *.1;
+    l._start += movement /** .1*/;
+    l._end   += movement /** .1*/ + rngVector2(frame+id.x,id.x) * 2.;;
     LineBuffer[id.x] = l;
 };
+
 [numthreads(8,1,1)]
 void DrawLine (uint3 id : SV_DispatchThreadID)
 {
@@ -36,21 +43,23 @@ void DrawLine (uint3 id : SV_DispatchThreadID)
     float4 col = float4
     (
         normalize( float2( (float)w, (float)h )) * .5 + float2( .5, .5 ),
-        0.,
+        (float)frame/256.,
         1.
     );
 
     int dx1 = sign(w), dx2 = dx1, dy1 = sign(h), dy2 = 0 ;
     int longest = abs(w) ;
     int shortest = abs(h) ;
-    if (!(longest>shortest)) {
+    if (!(longest>shortest)) 
+    {
         longest = abs(h) ;
         shortest = abs(w) ;
         dy2 = dy1;
         dx2 = 0;
     }
     int numerator = longest >> 1 ; // bitwise operation: longest/2 floored
-    for (int i=0, x = l._start.x, y = l._start.y;i<=longest;i++) {
+    for (int i=0, x = l._start.x, y = l._start.y;i<=longest;i++) 
+    {
         OutTexture[int2(x,y)] = col;
         numerator += shortest ;
         if (!(numerator<longest)) {

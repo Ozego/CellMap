@@ -22,165 +22,175 @@ public class LineMap : MonoBehaviour
     // negative crosshatch ex:
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     //  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-    // Start is called before the first frame update
-
     //think sewing machine
     // straightlines with rounded edges
 
-    //render data
 
-    [SerializeField] Vector2Int mSize; 
-    [SerializeField] private int frameCount;
-    // [SerializeField] private Shader sLine;
+    [SerializeField] private string seed;
     [SerializeField] private ComputeShader csNoise;
     [SerializeField] private ComputeShader csLine;
-    [SerializeField] private string seed;
 
+
+    [SerializeField] Vector2Int mSize; 
     private MeshRenderer mRenderer;
     private GameObject qDisplay;
+
+    private int cFrameCount = 2;
+    private int cFramePointer = 0; 
+    private int threadSize = 8;
+
     private List<RenderTexture> rTextures = new List<RenderTexture>();
-    private int rFrame = 0; 
+    private List<ComputeBuffer> lineBuffers = new List<ComputeBuffer>();
 
     private List<Line> lines = new List<Line>();
     private int lineCount;
-    private ComputeBuffer lineBuffer;
-    private int threadX = 8;
 
     public struct Line 
     {
         public Vector2 _start;
         public Vector2 _end;
-        public Color _color;
+        public Color   _color;
 
         public Vector2 localVector{ get{ return _end - _start; } }
         public static int byteSize{ get{ return sizeof(float)*8; } }
     }
+    // void OnDrawGizmos()
+    // {
+    // }
     void Start()
     {
-        if(seed==""|seed==null)
+        if (seed == "" | seed == null)
         {
             seed = System.DateTime.Now.ToString();
         }
         Random.InitState(seed.GetHashCode());
         GenerateDisplay();
+        GenerateRenderTextures();
         GenerateLines();
-        lineBuffer = new ComputeBuffer(lineCount, Line.byteSize, ComputeBufferType.Default);
+        GenerateBuffers();
         ComputeStepFrame();
     }
+
+
     void OnDestroy()
     {
-        lineBuffer.Release();
+        for (int i = 0; i < cFrameCount; i++)
+        {
+            lineBuffers[i].Release();
+        }
     }
     private void Update()
     {
-        updateRFrame();
-        int noiseKernelID = csNoise.FindKernel("DrawNoise");
-        csNoise.SetInt("Frame", Time.frameCount);
-        csNoise.SetTexture(noiseKernelID, "OutTexture", rTextures[rFrame]);
-        csNoise.Dispatch(noiseKernelID, mSize.x/8, mSize.y/8, 1);
+        
+        // // int noiseKernelID = csNoise.FindKernel("DrawNoise");
+        // // csNoise.SetInt("Frame", Time.cFrameCount);
+        // // csNoise.SetTexture(noiseKernelID, "OutTexture", rTextures[cFramePointer]);
+        // // csNoise.Dispatch(noiseKernelID, mSize.x/8, mSize.y/8, 1);
+        csLine.SetInt("frame", Time.frameCount);
+    
+        int clearKernelID = csLine.FindKernel("Clear");
+        csLine.SetTexture(clearKernelID, "OutTexture", rTextures[0]);
+        // csLine.Dispatch(clearKernelID, mSize.x/threadSize, mSize.y/threadSize, 1);
 
+        // updatecFramePointer();
 
-        // int rasterizeKernelID = csLine.FindKernel("DrawLine");
-        // int moveKernelID = csLine.FindKernel("MoveLines");
-        // csLine.SetBuffer(rasterizeKernelID, "LineBuffer", lineBuffer);
-        // csLine.Dispatch(moveKernelID, lineCount / threadX, 1, 1);
+        int rasterizeKernelID = csLine.FindKernel("DrawLine");
+        csLine.SetBuffer(rasterizeKernelID, "LineBuffer", lineBuffers[0]);
+        csLine.SetTexture(rasterizeKernelID, "OutTexture", rTextures[0]);
+        csLine.Dispatch(rasterizeKernelID, lineCount / threadSize, 1, 1);
 
-        // csLine.SetBuffer(rasterizeKernelID, "LineBuffer", lineBuffer);
+        mRenderer.material.SetTexture("_MainTex", rTextures[0]); 
 
-        // csLine.SetTexture(rasterizeKernelID, "OutTexture", rTextures[rFrame]);
-        // csLine.Dispatch(rasterizeKernelID, lineCount / threadX, 1, 1);
-
-        mRenderer.material.SetTexture("_MainTex", rTextures[rFrame]); 
+        int moveKernelID = csLine.FindKernel("MoveLines");
+        csLine.SetBuffer(moveKernelID, "LineBuffer", lineBuffers[0]);
+        csLine.Dispatch(moveKernelID, lineCount / threadSize, 1, 1);
     }
 
     private void ComputeStepFrame()
     {
-        // int noiseKernelID = csNoise.FindKernel("DrawNoise");
-        // csNoise.SetTexture(noiseKernelID, "OutTexture", rTextures[rFrame]);
-        // csNoise.Dispatch(noiseKernelID, mSize.x/8, mSize.y/8, 1);
-        //recompile
-        
-        lineBuffer.SetData(lines);
+        lineBuffers[cFramePointer].SetData(lines);
         int rasterizeKernelID = csLine.FindKernel("DrawLine");
 
         csLine.SetInt("width", mSize.x);
         csLine.SetInt("height", mSize.y);
-        csLine.SetBuffer(rasterizeKernelID, "LineBuffer", lineBuffer);
+        csLine.SetBuffer(rasterizeKernelID, "LineBuffer", lineBuffers[0]);
 
-        csLine.SetTexture(rasterizeKernelID, "OutTexture", rTextures[rFrame]);
-        csLine.Dispatch(rasterizeKernelID, lineCount / threadX, 1, 1);
+        csLine.SetTexture(rasterizeKernelID, "OutTexture", rTextures[0]);
+        csLine.Dispatch(rasterizeKernelID, lineCount / threadSize, 1, 1);
 
-        mRenderer.material.SetTexture("_MainTex", rTextures[rFrame]); 
+        mRenderer.material.SetTexture("_MainTex", rTextures[0]); 
     }
 
 
+    private void updatecFramePointer()
+    {
+        cFramePointer++;
+        cFramePointer = cFramePointer%rTextures.Count;
+    }
+
+
+    //
+    private void GenerateDisplay()
+    {
+        //Boilerplate display 1px Rendertexture per 1 unit 
+        Camera.main.orthographicSize = mSize.y / 2;
+        //Gameobject
+        qDisplay = new GameObject("Display");
+        qDisplay.transform.parent = transform;
+        //Mesh Renderer
+        var mFilter = qDisplay.AddComponent<MeshFilter>();
+        mRenderer = qDisplay.AddComponent<MeshRenderer>();
+        var mGen = new MeshGenerator();
+        mFilter.mesh = mGen.GetQuad(mSize.x, mSize.y);
+        mRenderer.material = new Material(Shader.Find("Unlit/Texture"));
+    }
+    private void GenerateRenderTextures()
+    {
+        //RendecFrames
+        for (int i = 0; i < cFrameCount; i++)
+        {
+            var rT = new RenderTexture(mSize.x, mSize.y, 8);
+            rT.enableRandomWrite = true;
+            rT.filterMode = FilterMode.Trilinear;
+            rT.Create();
+            rTextures.Add(rT);
+        }
+        mRenderer.material.SetTexture("_MainTex", rTextures[0]);
+    }
     private void GenerateLines()
     {
-        Vector2 pos = new Vector2(mSize.x/2f,mSize.y/2f);
-        for (int i = 0; i < 500; i++) //500000 limit
+        Vector2 pos = new Vector2( mSize.x/2f, mSize.y/2f );
+        for (int i = 0; i < 4096; i++) //500000 limit
         {
             var mLine = new Line();
             mLine._start = pos;
-            pos += new Vector2(Random.value*50f-25f,Random.value*50f-25f);
+            pos += new Vector2( Random.value*4f-2f, Random.value*4f-2f );
             mLine._end = pos;
             mLine._color = Random.ColorHSV(0f,1f,.5f,1f,1f,1f);
             lines.Add(mLine);
         }
         cielLineCount();
     }
-
     private void cielLineCount()
     {
         lineCount = lines.Count;
-        if((lineCount % threadX) > 0)
+        if((lineCount % threadSize) > 0)
         {
-            lineCount += threadX - (lineCount % threadX);
+            lineCount += threadSize - (lineCount % threadSize);
         }
-        // Debug.Log("Actual Line count: " + lines.Count);
-        // Debug.Log("Line count for gpu: " + lineCount);
     }
-    private void updateRFrame()
+    private void GenerateBuffers()
     {
-        rFrame++;
-        rFrame = rFrame%rTextures.Count;
-    }
-
-
-    void OnDrawGizmos()
-    {
-            // Gizmos.color = Color.red;
-            // foreach (var line in lines)
-            // {
-            //     Gizmos.DrawLine
-            //     (
-            //         new Vector3(line._start.x-mSize.x/2f,0f,line._start.y-mSize.y/2f),
-            //         new Vector3(line._end.x-mSize.x/2f,0f,line._end.y-mSize.y/2f)
-            //     );
-            // }
-    }
-
-    private void GenerateDisplay()
-    {
-        //Boilerplate display 1px Rendertexture per 1 unit 
-        Camera.main.orthographicSize = mSize.y / 2;
-        qDisplay = new GameObject("Display");
-        qDisplay.transform.parent = transform;
-        var mFilter = qDisplay.AddComponent<MeshFilter>();
-        mRenderer = qDisplay.AddComponent<MeshRenderer>();
-        var mGen = new MeshGenerator();
-        mFilter.mesh = mGen.GetQuad(mSize.x, mSize.y);
-        mRenderer.material = new Material(Shader.Find("Unlit/Texture"));
-        
-        for (int i = 0; i < frameCount; i++)
+        for (int i = 0; i < cFrameCount; i++)
         {
-            var rT = new RenderTexture(mSize.x, mSize.y, 8);
-            rT.enableRandomWrite = true;
-            rT.filterMode = FilterMode.Point;
-            rT.Create();
-            rTextures.Add( rT );
+            var lBuffer = new ComputeBuffer
+            (
+                lineCount, 
+                Line.byteSize, 
+                ComputeBufferType.Default
+            );
+            lineBuffers.Add(lBuffer);
         }
-        mRenderer.material.SetTexture("_MainTex", rTextures[0]);
     }
-
 
 }

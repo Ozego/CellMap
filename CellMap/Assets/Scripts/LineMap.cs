@@ -26,25 +26,24 @@ public class LineMap : MonoBehaviour
     //think sewing machine
     // straightlines with rounded edges
 
+//  Tag                 Access      Type                Name                    Set
 
-    [SerializeField] private string seed;
-    [SerializeField] private ComputeShader csNoise;
-    [SerializeField] private ComputeShader csLine;
+    [SerializeField]    private     string              seed;
+    [SerializeField]    private     ComputeShader       csNoise;
+    [SerializeField]    private     ComputeShader       csLine;
+    [SerializeField]    private     Vector2Int          mSize;
+    
+                        private     MeshRenderer        mRenderer;
+                        private     GameObject          qDisplay;
+                        private     List<RenderTexture> rTextures               = new List<RenderTexture>();
 
+                        private     List<ComputeBuffer> lineBuffers             = new List<ComputeBuffer>();
+                        private     List<Line>          lines                   = new List<Line>();
+                        private     int                 lineCount;
 
-    [SerializeField] Vector2Int mSize; 
-    private MeshRenderer mRenderer;
-    private GameObject qDisplay;
-
-    private int cFrameCount = 2;
-    private int cFramePointer = 0; 
-    private int threadSize = 8;
-
-    private List<RenderTexture> rTextures = new List<RenderTexture>();
-    private List<ComputeBuffer> lineBuffers = new List<ComputeBuffer>();
-
-    private List<Line> lines = new List<Line>();
-    private int lineCount;
+                        private     int                 cFrameCount             = 2;
+                        private     int                 cFramePointer           = 0; 
+                        private     int                 threadSize              = 8;
 
     public struct Line 
     {
@@ -150,8 +149,7 @@ public class LineMap : MonoBehaviour
         //Mesh Renderer
         var mFilter = qDisplay.AddComponent<MeshFilter>();
         mRenderer = qDisplay.AddComponent<MeshRenderer>();
-        var mGen = new MeshGenerator();
-        mFilter.mesh = mGen.GetQuad(mSize.x, mSize.y);
+        mFilter.mesh = MeshGenerator.GetQuad(mSize.x, mSize.y);
         mRenderer.material = new Material(Shader.Find("Unlit/Texture"));
     }
     private void GenerateRenderTextures()

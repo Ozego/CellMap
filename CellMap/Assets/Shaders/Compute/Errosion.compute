@@ -1,0 +1,41 @@
+﻿#pragma kernel GetHeads
+#pragma kernel DrawHeads
+
+struct Head
+{
+    float2 position;
+    float2 direction;
+};
+/*
+HeightMap Structure:
+Red     Blue    Green   Alpha
+Height  ddX     ddY     Unmapped
+
+Tag                             Name                                            */
+Texture2D<float4>               HeightMap;
+RWTexture2D<float4>             FilterMap;
+Texture2D<float4>               BlueNoise;
+AppendStructuredBuffer<Head>    HeadAppendBuffer;
+ConsumeStructuredBuffer<Head>   HeadConsumeBuffer;
+
+[numthreads(8,8,1)]
+void GetHeads (uint3 id : SV_DispatchThreadID)
+{
+    uint2 noiseDimensions;
+    BlueNoise.GetDimensions( noiseDimensions.x , noiseDimensions.y );
+    float4 noiseVal = BlueNoise[ id.xy % noiseDimensions ];
+    [branch] if(noiseVal.r>.99)
+    {
+        Head newHead;
+        newHead.position = (float2)id.xy;
+        newHead.direction = float2(1.,1.);
+        HeadAppendBuffer.Append(newHead);
+    }
+}
+[numthreads(8,8,1)]
+void DrawHeads (uint3 id : SV_DispatchThreadID)
+{
+    Head dHead = HeadConsumeBuffer.Consume();
+    uint2 posID = (uint2)dHead.position;
+    FilterMap[posID] = float4(1.,0.,0.,1.);
+}

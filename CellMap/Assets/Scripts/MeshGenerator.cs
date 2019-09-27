@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class MeshGenerator
 {
-    public Mesh GetQuad(float width, float height)
+    public static Mesh GetQuad(float width, float height)
     {
         var mesh = new Mesh();
         var vertices = new Vector3[4]
@@ -39,7 +39,7 @@ public class MeshGenerator
         mesh.uv = uv;
         return mesh;
     }
-    public Mesh GetQuad(int width, int height)
+    public static Mesh GetQuad(int width, int height)
     {
         return GetQuad((float)width,(float)height);
     }

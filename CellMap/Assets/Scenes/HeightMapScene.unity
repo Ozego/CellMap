@@ -246,6 +246,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4634dc8bd2f74f241bf6de1f9a9d9154, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  HeightMapTexture: {fileID: 0}
+  size: {x: 512, y: 512}
+  csErrosion: {fileID: 7200000, guid: 19baa4cac44faab439e8e621dc16d07d, type: 3}
+  input: {fileID: 2800000, guid: bd74d1391ca7e3848a8690e1c206288a, type: 3}
+  blueNoise: {fileID: 2800000, guid: 76c4c40257fcc1b48b3e59ae1927d333, type: 3}
 --- !u!1 &1991346025
 GameObject:
   m_ObjectHideFlags: 0

@@ -306,8 +306,7 @@ public class CellMap : MonoBehaviour
         DisplayQuad.transform.parent = transform;
         var mFilter = DisplayQuad.AddComponent<MeshFilter>();
         var mRenderer = DisplayQuad.AddComponent<MeshRenderer>();
-        var mGen = new MeshGenerator();
-        mFilter.mesh = mGen.GetQuad(width, height);
+        mFilter.mesh = MeshGenerator.GetQuad(width, height);
         mRenderer.material = new Material(Shader.Find("Unlit/Texture"));
         dTexture = new Texture2D(width,height);
         for (int x = 0; x < width; x++)

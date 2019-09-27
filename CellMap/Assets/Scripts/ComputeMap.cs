@@ -62,8 +62,7 @@ public class ComputeMap : MonoBehaviour
         DisplayQuad.transform.parent = transform;
         var mFilter = DisplayQuad.AddComponent<MeshFilter>();
         mRenderer = DisplayQuad.AddComponent<MeshRenderer>();
-        var mGen = new MeshGenerator();
-        mFilter.mesh = mGen.GetQuad(width, height);
+        mFilter.mesh = MeshGenerator.GetQuad(width, height);
         mRenderer.material = new Material(Shader.Find("Unlit/Texture"));
 
         rTextures = new RenderTexture[frameCount];

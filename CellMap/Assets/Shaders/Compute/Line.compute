@@ -3,7 +3,7 @@
 #pragma kernel AlignLines
 #pragma kernel DrawLine
 #pragma kernel MoveLines
-#include "Assets\Shaders\Compute\rngInclude.compute"
+#include "rngInclude.compute"
 
 struct Line
 {

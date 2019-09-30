@@ -16,9 +16,11 @@ public class HeightMap : MonoBehaviour
 
                         private     RenderTexture   filterMapTexture;
                         private     MeshRenderer    displayRenderer;
-                        private     ComputeBuffer   headBuffer;
-                        private     int             maxHeads;
+                        private     ComputeBuffer[] headBuffers                 = new ComputeBuffer[2];
                         private     List<Head>      heads                       = new List<Head>();
+                        private     int             maxHeads;
+                        private     int ConsumeBufferID = 0, 
+                                        AppendBufferID  = 1;
     //Structs
     public struct Head
     {
@@ -38,27 +40,69 @@ public class HeightMap : MonoBehaviour
         GenerateTexutres();
         GenerateBuffers();
 
-        headBuffer.SetCounterValue( 0 );
-        int GetHeadsKID = csErrosion.FindKernel( "GetHeads" );
-        csErrosion.SetTexture(  GetHeadsKID , "BlueNoise", blueNoise );
-        csErrosion.SetBuffer(   GetHeadsKID , "HeadAppendBuffer", headBuffer );
-        csErrosion.SetTexture(  GetHeadsKID , "FilterMap" , filterMapTexture );
-        csErrosion.Dispatch(    GetHeadsKID , size.x/8 , size.y/8 , 1 );
+        csErrosion.SetInt(   "lDensity",    10   );
+        csErrosion.SetFloat( "cInertia",    0.9f );
+        csErrosion.SetFloat( "sInertia",    0.9f );
+        csErrosion.SetFloat( "cChaos",      5.0f );
+        csErrosion.SetFloat( "sChaos",      5.0f );
 
-        headBuffer.SetCounterValue( (uint)maxHeads );
+        int GetHeadsKID = csErrosion.FindKernel( "GetHeads" );
+        csErrosion.SetInts(                     "Size",                 new int[] { size.x, size.y } );
+        csErrosion.SetInt(                      "Frame",                Time.frameCount);
+        csErrosion.SetTexture(  GetHeadsKID,    "BlueNoise",            blueNoise );
+        csErrosion.SetBuffer(   GetHeadsKID,    "HeadAppendBuffer",     headBuffers[AppendBufferID] );
+        csErrosion.SetTexture(  GetHeadsKID,    "FilterMap",            filterMapTexture );
+        csErrosion.Dispatch(    GetHeadsKID, size.x / 8, size.y / 8, 1 );
+
+        ConsumeBufferID = AppendBufferID; AppendBufferID = ( AppendBufferID + 1 ) % 2;
         int DrawHeadsKID = csErrosion.FindKernel( "DrawHeads" );
-        csErrosion.SetTexture(  DrawHeadsKID , "FilterMap" , filterMapTexture );
-        csErrosion.SetBuffer(   DrawHeadsKID , "HeadConsumeBuffer", headBuffer );
-        csErrosion.Dispatch(    DrawHeadsKID , size.x/8, size.y/8, 1);
-        displayRenderer.material.SetTexture( "_MainTex" , filterMapTexture );
-        headBuffer.Release();
+        csErrosion.SetTexture(  DrawHeadsKID,   "FilterMap",            filterMapTexture );
+        csErrosion.SetBuffer(   DrawHeadsKID,   "HeadAppendBuffer",     headBuffers[AppendBufferID] );
+        csErrosion.SetBuffer(   DrawHeadsKID,   "HeadConsumeBuffer",    headBuffers[ConsumeBufferID] );
+        csErrosion.Dispatch(    DrawHeadsKID, size.x / 8, size.y / 8, 1 );
+
+        
+        displayRenderer.material.SetTexture( "_MainTex", filterMapTexture );
+
     }
-    void OnDestroy()
+    void OnDestroy() // 
     {
         HeightMapTexture.Release();
-        headBuffer.Release();
+        foreach (var buffer in headBuffers) buffer.Release();
     }
-    void Update(){}
+    void Update()
+    {
+            if(Time.frameCount%128==0)
+            {
+                int ClearID = csErrosion.FindKernel( "Clear" );
+                csErrosion.SetTexture(  ClearID, "FilterMap", filterMapTexture );
+                csErrosion.Dispatch(    ClearID, size.x / 8, size.y / 8, 1 );
+                for (int i = 0; i < headBuffers.Length; i++)
+                {
+                    headBuffers[i].Release();
+                    headBuffers[i] = new ComputeBuffer( maxHeads, Head.ByteSize, ComputeBufferType.Append );
+                    headBuffers[i].SetCounterValue( 0 );
+                }
+                csErrosion.SetInt(   "lDensity", Random.Range(01,255) );
+                csErrosion.SetFloat( "cInertia", Random.Range(.5f,1.5f) );
+                csErrosion.SetFloat( "sInertia", Random.Range(.5f,1.5f) );  
+                csErrosion.SetFloat( "cChaos", Random.Range(.1f,15f) );
+                csErrosion.SetFloat( "sChaos", Random.Range(.1f,15f) );
+                int GetHeadsKID = csErrosion.FindKernel( "GetHeads" );
+                csErrosion.Dispatch(    GetHeadsKID, size.x / 8, size.y / 8, 1 );
+            }
+            int DrawHeadsKID = csErrosion.FindKernel( "DrawHeads" );
+            csErrosion.SetInt( "Frame", Time.frameCount);
+            
+            ConsumeBufferID = AppendBufferID; AppendBufferID = ( AppendBufferID + 1 ) % 2;
+            headBuffers[AppendBufferID].Release();
+            headBuffers[AppendBufferID] = new ComputeBuffer( maxHeads, Head.ByteSize, ComputeBufferType.Append );
+            headBuffers[AppendBufferID].SetCounterValue( 0 );
+
+            csErrosion.SetBuffer(   DrawHeadsKID,   "HeadAppendBuffer",     headBuffers[AppendBufferID] );
+            csErrosion.SetBuffer(   DrawHeadsKID,   "HeadConsumeBuffer",    headBuffers[ConsumeBufferID] );
+            csErrosion.Dispatch(    DrawHeadsKID, size.x / 8, size.y / 8, 1 );
+    }
     //Classes
     //Functions
     void GenerateDisplay()
@@ -66,7 +110,7 @@ public class HeightMap : MonoBehaviour
         var display     = new GameObject( "display" );
         var meshFilter  = display.AddComponent<MeshFilter>();
         displayRenderer = display.AddComponent<MeshRenderer>();
-        meshFilter.mesh = MeshGenerator.GetQuad( size.x , size.y );
+        meshFilter.mesh = MeshGenerator.GetQuad( size.x, size.y );
 
         display.transform.parent = transform;
         Camera.main.orthographicSize = size.y / 2;
@@ -74,18 +118,22 @@ public class HeightMap : MonoBehaviour
     }
     void GenerateTexutres()
     {
-        HeightMapTexture = new RenderTexture( size.x , size.y , 24 );
-        filterMapTexture = new RenderTexture( size.x , size.y , 24 );
+        HeightMapTexture = new RenderTexture( size.x, size.y, 24 );
+        filterMapTexture = new RenderTexture( size.x, size.y, 24 );
         HeightMapTexture.enableRandomWrite = true;
         filterMapTexture.enableRandomWrite = true;
         HeightMapTexture.Create();
         filterMapTexture.Create();
-        Graphics.Blit(input,HeightMapTexture);
+        filterMapTexture.filterMode = FilterMode.Point;
+        Graphics.Blit( input, HeightMapTexture );
     }
     void GenerateBuffers()
     {
         maxHeads = size.x/8*size.y/8;
-        Debug.Log("Head count: "+maxHeads);
-        headBuffer = new ComputeBuffer( maxHeads , Head.ByteSize , ComputeBufferType.Append );
+        for (int i = 0; i < headBuffers.Length; i++)
+        {
+            headBuffers[i] = new ComputeBuffer( maxHeads, Head.ByteSize, ComputeBufferType.Append );
+            headBuffers[i].SetCounterValue( 0 );
+        }
     }
 }

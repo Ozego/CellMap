@@ -5,8 +5,9 @@
 
 struct Head
 {
-    float2 position;
-    float2 direction;
+    float2  position;
+    float2  direction;
+    uint     state;
 };
 /*
 HeightMap Structure:
@@ -19,8 +20,8 @@ RWTexture2D<float4>             FilterMap;
 Texture2D<float4>               BlueNoise;
 AppendStructuredBuffer<Head>    HeadAppendBuffer;
 ConsumeStructuredBuffer<Head>   HeadConsumeBuffer;
-uint2                           Size;
-uint                            Frame;
+int2                            Size;
+int                             Frame;
 int                             lDensity;
 float                           cInertia;
 float                           sInertia;
@@ -35,41 +36,45 @@ void Clear (uint3 id : SV_DispatchThreadID)
 [numthreads(8,8,1)]
 void GetHeads (uint3 id : SV_DispatchThreadID)
 {
-    uint2 noiseDimensions;
-    BlueNoise.GetDimensions( noiseDimensions.x , noiseDimensions.y );
-    float4 noiseVal = BlueNoise[ id.xy % noiseDimensions ];
+    // uint2 noiseDimensions;
+    // BlueNoise.GetDimensions( noiseDimensions.x , noiseDimensions.y );
+    // float4 noiseVal = BlueNoise[ id.xy % noiseDimensions ];
     // [branch] if(noiseVal.r>.99)
-    uint2 midPoint = uint2( Size.x>>1, Size.y>>1 ); // bitwise halfing
-    if( id.x == midPoint.x|id.y == 0 )
+
+    // if( id.y == 0 )
+    // if(rng2D( id.xy, Frame^8 )*rng2D( id.xy, Frame ) > .97)
+    uint2 midPoint = uint2( (uint)(Size.x>>1), (uint)(Size.y>>1) ); // bitwise halfing
+    if( id.x == midPoint.x & id.y == midPoint.y )
     {
         Head newHead;
         newHead.position = (float2)id.xy;
-        newHead.direction = float2(0.,0.);
+        newHead.direction = float2(0.,10.);
+        newHead.state = 1;
         HeadAppendBuffer.Append(newHead);
     }
 }
 [numthreads(8,8,1)]
 void DrawHeads (uint3 id : SV_DispatchThreadID)
 {
-    Head dHead = HeadConsumeBuffer.Consume();
-    if(dHead.position.x==0&&dHead.position.y==0) return; //If null return
+    Head readHead = HeadConsumeBuffer.Consume();
+    if(readHead.state == 0) return; //If null return
 
-    int dx1 = sign( dHead.direction.x ), dx2 = dx1, dy1 = sign( dHead.direction.y ), dy2 = 0;
-    int longest = abs( dHead.direction.x );
-    int shortest = abs( dHead.direction.y );
+    int dx1 = sign( readHead.direction.x ), dx2 = dx1, dy1 = sign( readHead.direction.y ), dy2 = 0;
+    int longest = abs( readHead.direction.x );
+    int shortest = abs( readHead.direction.y );
     if (!(longest>shortest)) 
     {
-        longest = abs( dHead.direction.y );
-        shortest = abs( dHead.direction.x );
+        longest = abs( readHead.direction.y );
+        shortest = abs( readHead.direction.x );
         dy2 = dy1;
         dx2 = 0;
     }
     int numerator = longest >> 1; // bitwise halfing
-    for (int i=0, x = dHead.position.x, y = dHead.position.y; i < longest; i++ ) 
+    for (int i=0, x = readHead.position.x, y = readHead.position.y; i <= longest; i++ ) 
     {
         int modX = ( x % Size.x + Size.x ) % Size.x;
         int modY = ( y % Size.y + Size.y ) % Size.y;
-        if(FilterMap[ int2( modX, modY ) ].g == 1. ) 
+        if(FilterMap[ int2( modX, modY ) ].g == 1. && i!=0 ) 
         {
             // FilterMap[ int2( modX, modY ) ] = float4( 1., 0., 0., 1. );
             return;
@@ -87,16 +92,18 @@ void DrawHeads (uint3 id : SV_DispatchThreadID)
     }
 
     Head outHead;
-    outHead.direction = dHead.direction*cInertia+rngVector2(Frame, id.x^id.y)*cChaos;
-    outHead.position = dHead.position+dHead.direction;
+    outHead.direction = readHead.direction*cInertia+rngVector2(Frame, id.x^id.y)*cChaos;
+    outHead.position = readHead.position+readHead.direction;
+    outHead.state = 1;
     HeadAppendBuffer.Append(outHead);
 
     if(rng256(Frame,id.x)>lDensity)
     {
-        Head outHeadS;
-        outHeadS.direction = dHead.direction*sInertia+rngVector2(Frame, id.x^id.y)*cChaos;
-        outHeadS.position = dHead.position+dHead.direction;
-        HeadAppendBuffer.Append(outHeadS);
+        Head outHeadChild;
+        outHeadChild.direction = readHead.direction*sInertia+rngVector2(Frame, id.x^id.y)*cChaos;
+        outHeadChild.position = readHead.position+readHead.direction;
+        outHeadChild.state = 1;
+        HeadAppendBuffer.Append(outHeadChild);
     }
 }
 
@@ -104,8 +111,8 @@ void DrawHeads (uint3 id : SV_DispatchThreadID)
 // [numthreads(8,8,1)]
 // void DrawHeads (uint3 id : SV_DispatchThreadID)
 // {
-//     Head dHead = HeadConsumeBuffer.Consume();
-//     uint2 posID = (uint2)dHead.position;
+//     Head readHead = HeadConsumeBuffer.Consume();
+//     uint2 posID = (uint2)readHead.position;
 //     if( FilterMap[posID].r == 1. )
 //     {
 //         FilterMap[posID] = float4( 0., 1., 0., 1. );
@@ -114,5 +121,5 @@ void DrawHeads (uint3 id : SV_DispatchThreadID)
 //     {
 //         FilterMap[posID] = float4( 1., 0., 0., 1. );
 //     }
-//     HeadAppendBuffer.Append(dHead);
+//     HeadAppendBuffer.Append(readHead);
 // }

@@ -26,7 +26,10 @@ public class HeightMap : MonoBehaviour
     {
         public Vector2 position;
         public Vector2 direction;
-        static public int ByteSize{get{return sizeof(float)*4;}}
+        // public float   speed;
+        public uint    state;
+        
+        static public int ByteSize{get{return sizeof(float)*4+sizeof(int);}}
     }
     //Editor
     void OnGizmos()
@@ -36,6 +39,8 @@ public class HeightMap : MonoBehaviour
     //Game
     void Awake()
     {
+        size.x = Mathf.CeilToInt((float)size.x/8f)*8;
+        size.y = Mathf.CeilToInt((float)size.y/8f)*8;
         GenerateDisplay();
         GenerateTexutres();
         GenerateBuffers();
@@ -59,9 +64,8 @@ public class HeightMap : MonoBehaviour
         csErrosion.SetTexture(  DrawHeadsKID,   "FilterMap",            filterMapTexture );
         csErrosion.SetBuffer(   DrawHeadsKID,   "HeadAppendBuffer",     headBuffers[AppendBufferID] );
         csErrosion.SetBuffer(   DrawHeadsKID,   "HeadConsumeBuffer",    headBuffers[ConsumeBufferID] );
-        csErrosion.Dispatch(    DrawHeadsKID, size.x / 8, size.y / 8, 1 );
+        csErrosion.Dispatch(    DrawHeadsKID, size.x / 32, size.y / 32, 1 );
 
-        
         displayRenderer.material.SetTexture( "_MainTex", filterMapTexture );
 
     }
@@ -72,7 +76,7 @@ public class HeightMap : MonoBehaviour
     }
     void Update()
     {
-            if(Time.frameCount%128==0)
+            if(Time.frameCount%64==0)
             {
                 int ClearID = csErrosion.FindKernel( "Clear" );
                 csErrosion.SetTexture(  ClearID, "FilterMap", filterMapTexture );
@@ -89,7 +93,7 @@ public class HeightMap : MonoBehaviour
                 csErrosion.SetFloat( "cChaos", Random.Range(.1f,15f) );
                 csErrosion.SetFloat( "sChaos", Random.Range(.1f,15f) );
                 int GetHeadsKID = csErrosion.FindKernel( "GetHeads" );
-                csErrosion.Dispatch(    GetHeadsKID, size.x / 8, size.y / 8, 1 );
+                csErrosion.Dispatch( GetHeadsKID, size.x / 8, size.y / 8, 1 );
             }
             int DrawHeadsKID = csErrosion.FindKernel( "DrawHeads" );
             csErrosion.SetInt( "Frame", Time.frameCount);
@@ -101,7 +105,7 @@ public class HeightMap : MonoBehaviour
 
             csErrosion.SetBuffer(   DrawHeadsKID,   "HeadAppendBuffer",     headBuffers[AppendBufferID] );
             csErrosion.SetBuffer(   DrawHeadsKID,   "HeadConsumeBuffer",    headBuffers[ConsumeBufferID] );
-            csErrosion.Dispatch(    DrawHeadsKID, size.x / 8, size.y / 8, 1 );
+            csErrosion.Dispatch(    DrawHeadsKID, size.x / 32, size.y / 32, 1 );
     }
     //Classes
     //Functions
@@ -129,7 +133,7 @@ public class HeightMap : MonoBehaviour
     }
     void GenerateBuffers()
     {
-        maxHeads = size.x/8*size.y/8;
+        maxHeads = size.x/4*size.y/4;
         for (int i = 0; i < headBuffers.Length; i++)
         {
             headBuffers[i] = new ComputeBuffer( maxHeads, Head.ByteSize, ComputeBufferType.Append );

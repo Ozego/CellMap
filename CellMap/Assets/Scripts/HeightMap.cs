@@ -13,6 +13,8 @@ public class HeightMap : MonoBehaviour
     [SerializeField]    private     ComputeShader   csErrosion;
     [SerializeField]    private     Texture2D       input;
     [SerializeField]    private     Texture2D       blueNoise;
+    [SerializeField]    private     Material        initializeHeightmap;
+    [SerializeField]    private     Material        flowErosion;
 
                         private     RenderTexture   filterMapTexture;
                         private     MeshRenderer    displayRenderer;
@@ -46,7 +48,6 @@ public class HeightMap : MonoBehaviour
         GenerateBuffers();
         GenerateMaps();
         displayRenderer.material.SetTexture("_MainTex", filterMapTexture);
-
     }
 
     void OnDestroy() // 
@@ -57,7 +58,10 @@ public class HeightMap : MonoBehaviour
     void Update()
     {
         if (Time.frameCount % 128 == 0) ResetMaps();
+        // for (int i = 0; i < 63; i++)
         DrawStep();
+        if(Input.GetMouseButton(0)) displayRenderer.material.SetTexture("_MainTex", filterMapTexture);
+        else displayRenderer.material.SetTexture("_MainTex", HeightMapTexture);
     }
 
     void DrawStep()
@@ -66,6 +70,7 @@ public class HeightMap : MonoBehaviour
         csErrosion.SetInt( "Frame", Time.frameCount );
 
         ConsumeBufferID = AppendBufferID; AppendBufferID = (AppendBufferID + 1) % 2;
+        
         headBuffers[ AppendBufferID ].Release();
         headBuffers[ AppendBufferID ] = new ComputeBuffer(maxHeads, Head.ByteSize, ComputeBufferType.Append);
         headBuffers[ AppendBufferID ].SetCounterValue(0);
@@ -85,15 +90,15 @@ public class HeightMap : MonoBehaviour
             headBuffers[i] = new ComputeBuffer(maxHeads, Head.ByteSize, ComputeBufferType.Append);
             headBuffers[i].SetCounterValue(0);
         }
-        csErrosion.SetInt(      "lDensity",     Random.Range( 1, 255 ) );
-        csErrosion.SetFloat(    "clInertia",    1f);//Random.Range( 0.5f, 1.5f ) );
-        csErrosion.SetFloat(    "slInertia",    Random.Range( 0.75f, 1.25f ) );
-        csErrosion.SetFloat(    "clChaos",      1f);//Random.Range( 0.0f, 1.0f ) );
-        csErrosion.SetFloat(    "slChaos",      Random.Range( 0.0f, 1.0f ) );
-        csErrosion.SetFloat(    "cInertia",     Random.Range( 0.0f, 1.5f ) );
-        csErrosion.SetFloat(    "sInertia",     Random.Range( 0.0f, 1.5f ) );
-        csErrosion.SetFloat(    "cChaos",       Random.Range( 0.0f, 1.5f ) );
-        csErrosion.SetFloat(    "sChaos",       Random.Range( 0.0f, 1.5f ) );
+        csErrosion.SetInt(      "lDensity",     Random.Range( 50,    200 ) );
+        csErrosion.SetFloat(    "clInertia",    Random.Range( 0.75f, 1.0f ) );
+        csErrosion.SetFloat(    "slInertia",    Random.Range( 0.9f,  1.1f ) );
+        csErrosion.SetFloat(    "clChaos",      Random.Range( 0.1f,  1.0f ) );
+        csErrosion.SetFloat(    "slChaos",      Random.Range( 0.1f,  1.0f ) );
+        csErrosion.SetFloat(    "cInertia",     Random.Range( 0.8f,  1.2f ) );
+        csErrosion.SetFloat(    "sInertia",     Random.Range( 0.8f,  1.2f ) );
+        csErrosion.SetFloat(    "cChaos",       Random.Range( 0.1f,  1.0f ) );
+        csErrosion.SetFloat(    "sChaos",       Random.Range( 0.1f,  1.0f ) );
         int GetHeadsKID = csErrosion.FindKernel("GetHeads");
         csErrosion.Dispatch(GetHeadsKID, size.x / 8, size.y / 8, 1);
     }
@@ -110,14 +115,17 @@ public class HeightMap : MonoBehaviour
     }
     void GenerateTexutres()
     {
-        HeightMapTexture = new RenderTexture( size.x, size.y, 24 );
         filterMapTexture = new RenderTexture( size.x, size.y, 24 );
-        HeightMapTexture.enableRandomWrite = true;
         filterMapTexture.enableRandomWrite = true;
-        HeightMapTexture.Create();
         filterMapTexture.Create();
         filterMapTexture.filterMode = FilterMode.Point;
-        Graphics.Blit( input, HeightMapTexture );
+
+        HeightMapTexture = new RenderTexture( size.x, size.y, 24 );
+        HeightMapTexture.enableRandomWrite = true;
+
+
+        RenderTexture tRT = new RenderTexture(HeightMapTexture);
+        Graphics.Blit( input, HeightMapTexture, initializeHeightmap);
     }
     void GenerateBuffers()
     {
@@ -139,6 +147,10 @@ public class HeightMap : MonoBehaviour
         csErrosion.SetFloat( "sInertia",    1.0f );
         csErrosion.SetFloat( "cChaos",      0.5f );
         csErrosion.SetFloat( "sChaos",      0.5f );
+
+        int ClearID = csErrosion.FindKernel( "Clear" );
+        csErrosion.SetTexture( ClearID, "FilterMap", filterMapTexture );
+        csErrosion.Dispatch( ClearID, size.x / 8, size.y / 8, 1 );
 
         int GetHeadsKID = csErrosion.FindKernel("GetHeads");
         csErrosion.SetInts("Size", new int[] { size.x, size.y });

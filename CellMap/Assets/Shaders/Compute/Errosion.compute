@@ -2,6 +2,7 @@
 #pragma kernel GetHeads
 #pragma kernel DrawHeads
 #include "rngInclude.compute"
+#define GRIDWIDTH 128
 
 struct Head
 {
@@ -37,7 +38,7 @@ float                           sChaos;
 void Clear (uint3 id : SV_DispatchThreadID)
 {
     // FilterMap[id.xy] = FilterMap[id.xy]*.75;
-    FilterMap[id.xy] = float4( 0., 0., 0., 0. );
+    FilterMap[id.xy] = float4( 0.5, 0.5, 0., 0. );
 }
 [numthreads(8,8,1)]
 void GetHeads (uint3 id : SV_DispatchThreadID)
@@ -47,13 +48,13 @@ void GetHeads (uint3 id : SV_DispatchThreadID)
     // float4 noiseVal = BlueNoise[ id.xy % noiseDimensions ];
     // [branch] if(noiseVal.r>.99)
 
-    if( id.y == 0 & id.x%32==0)
+    if( id.y % GRIDWIDTH == 0 & id.x % GRIDWIDTH == 0)
     // if(rng2D( id.xy, Frame^8 )*rng2D( id.xy, Frame ) > .97)
     // uint2 midPoint = uint2( (uint)(Size.x>>1), (uint)(Size.y>>1) ); // bitwise halfing
     // if( id.x == midPoint.x & id.y == midPoint.y )
     {
         Head newHead;
-        newHead.position = (float2)id.xy;
+        newHead.position = (float2)id.xy + ( rng2D( id.xy , Frame ) - .5 ) * GRIDWIDTH;
         newHead.direction = float2(0.,1.);
         newHead.speed = 8;
         newHead.state = 1;
@@ -84,7 +85,7 @@ void DrawHeads (uint3 id : SV_DispatchThreadID)
         int modY = ( y % Size.y + Size.y ) % Size.y;
         //TODO: Detect diagonal Lines intersection
         if(FilterMap[ int2( modX, modY ) ].a == 1. && i!=0 ) return;            //If traversing existing cell return
-        FilterMap[ int2( modX, modY ) ] = float4( 0., 1., 0., 1. );
+        FilterMap[ int2( modX, modY ) ] = float4( consumeHead.direction, 0., 1. );
         numerator += shortest;
         if ( !( numerator < longest ) ) {
             numerator -= longest;

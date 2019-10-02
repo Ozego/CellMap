@@ -29,7 +29,7 @@ float rngFloat(int id, int seed)
 };
 float rng2D(int2 id, int seed)
 {
-    return rngFloat( id.x + ( id.y << 8 ), rng256( seed, id.x ^ id.y ));
+    return rngFloat( id.x + ( id.y << 4 ), rng256( seed, id.x ^ id.y ));
 };
 float2 rngVector2(int id, int seed)
 {

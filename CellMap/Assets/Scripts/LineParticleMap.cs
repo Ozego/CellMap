@@ -3,29 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Random = UnityEngine.Random;
-public class LineMap : MonoBehaviour
+public class LineParticleMap : MonoBehaviour
 {
-    // itterative line renderer 
-    // todo: line pattern renderer:
-    // -------------------------------------------------------------------------
-    // -------------------------------------------------------------------------
-    // fish scale pattern 
-    // CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-    // CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-    //dragon scale pattern 
-    // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    // waves of joy division formula 
-    // =========================================================================
-    // =========================================================================
-    // lovecrafian eyes 
-    // <o><o><o><o><o><o><o><o><o><o><o><o><o><o><o><o><o><o><o><o><o><o><o><o><
-    // negative crosshatch ex:
-    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    //  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-    //think sewing machine
-    // straightlines with rounded edges
-
 //  Tag                 Access      Type                Name                    Set
 
     [SerializeField]    private     string              seed;

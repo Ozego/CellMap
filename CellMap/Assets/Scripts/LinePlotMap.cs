@@ -4,17 +4,13 @@ using System.Collections.Generic;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-public class HeightMap : MonoBehaviour
+public class LinePlotMap : MonoBehaviour
 {
 //  Tag                 Access      Type            Name                        Set
     [HideInInspector]   public      RenderTexture   HeightMapTexture;
 
     [SerializeField]    private     Vector2Int      size;
     [SerializeField]    private     ComputeShader   csErrosion;
-    [SerializeField]    private     Texture2D       input;
-    [SerializeField]    private     Texture2D       blueNoise;
-    [SerializeField]    private     Material        initializeHeightmap;
-    [SerializeField]    private     Material        flowErosion;
 
                         private     RenderTexture   filterMapTexture;
                         private     MeshRenderer    displayRenderer;
@@ -125,7 +121,6 @@ public class HeightMap : MonoBehaviour
 
 
         RenderTexture tRT = new RenderTexture(HeightMapTexture);
-        Graphics.Blit( input, HeightMapTexture, initializeHeightmap);
     }
     void GenerateBuffers()
     {
@@ -155,7 +150,6 @@ public class HeightMap : MonoBehaviour
         int GetHeadsKID = csErrosion.FindKernel("GetHeads");
         csErrosion.SetInts("Size", new int[] { size.x, size.y });
         csErrosion.SetInt("Frame", Time.frameCount);
-        csErrosion.SetTexture(GetHeadsKID, "BlueNoise", blueNoise);
         csErrosion.SetBuffer(GetHeadsKID, "HeadAppendBuffer", headBuffers[AppendBufferID]);
         csErrosion.SetTexture(GetHeadsKID, "FilterMap", filterMapTexture);
         csErrosion.Dispatch(GetHeadsKID, size.x / 8, size.y / 8, 1);

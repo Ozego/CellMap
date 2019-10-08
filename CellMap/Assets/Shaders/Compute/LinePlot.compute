@@ -17,9 +17,7 @@ Red     Blue    Green   Alpha
 Height  ddX     ddY     Unmapped
 
 Tag                             Name                                            */
-Texture2D<float4>               HeightMap;
 RWTexture2D<float4>             FilterMap;
-Texture2D<float4>               BlueNoise;
 AppendStructuredBuffer<Head>    HeadAppendBuffer;
 ConsumeStructuredBuffer<Head>   HeadConsumeBuffer;
 int2                            Size;

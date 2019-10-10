@@ -64,7 +64,8 @@ public class LinePlotMap : MonoBehaviour
     void Update()
     {
         frameCount = frameCount&0xFFFE;
-        if (Input.GetKeyDown("n")) frameOffset = (Time.frameCount+1)&0xFFFE; //For some reason the frame can only be reset on even frame counts
+        if (Input.GetKeyDown("c")) ClearMap();
+        if (Input.GetKeyDown("n")) frameOffset = (Time.frameCount+1)&0xFFFE;    //For some reason the frame can only be reset on even frame counts
         if ((Time.frameCount - frameOffset) % frameCount == 0) ResetMaps();
         DrawStep();
         displayRenderer.material.SetTexture("_MainTex", lineMapTexture);
@@ -87,27 +88,33 @@ public class LinePlotMap : MonoBehaviour
     }
     void ResetMaps()
     {
-        int ClearID = csErrosion.FindKernel( "Clear" );
-        csErrosion.SetTexture( ClearID, "LineMap", lineMapTexture );
-        csErrosion.Dispatch( ClearID, size.x / 8, size.y / 8, 1 );
+        ClearMap();
+        csErrosion.SetInt("lDensity", lDensity);
+        csErrosion.SetFloat("clInertia", clInertia);
+        csErrosion.SetFloat("slInertia", slInertia);
+        csErrosion.SetFloat("clChaos", clChaos);
+        csErrosion.SetFloat("slChaos", slChaos);
+        csErrosion.SetFloat("cInertia", cInertia);
+        csErrosion.SetFloat("sInertia", sInertia);
+        csErrosion.SetFloat("cChaos", cChaos);
+        csErrosion.SetFloat("sChaos", sChaos);
+        int GetHeadsKID = csErrosion.FindKernel("GetHeads");
+        csErrosion.Dispatch(GetHeadsKID, size.x / 8, size.y / 8, 1);
+    }
+
+    private void ClearMap()
+    {
+        int ClearID = csErrosion.FindKernel("Clear");
+        csErrosion.SetTexture(ClearID, "LineMap", lineMapTexture);
+        csErrosion.Dispatch(ClearID, size.x / 8, size.y / 8, 1);
         for (int i = 0; i < headBuffers.Length; i++)
         {
             headBuffers[i].Release();
             headBuffers[i] = new ComputeBuffer(maxHeads, Head.ByteSize, ComputeBufferType.Append);
             headBuffers[i].SetCounterValue(0);
         }
-        csErrosion.SetInt(      "lDensity",     lDensity );
-        csErrosion.SetFloat(    "clInertia",    clInertia );
-        csErrosion.SetFloat(    "slInertia",    slInertia );
-        csErrosion.SetFloat(    "clChaos",      clChaos );
-        csErrosion.SetFloat(    "slChaos",      slChaos );
-        csErrosion.SetFloat(    "cInertia",     cInertia );
-        csErrosion.SetFloat(    "sInertia",     sInertia );
-        csErrosion.SetFloat(    "cChaos",       cChaos );
-        csErrosion.SetFloat(    "sChaos",       sChaos );
-        int GetHeadsKID = csErrosion.FindKernel("GetHeads");
-        csErrosion.Dispatch(GetHeadsKID, size.x / 8, size.y / 8, 1);
     }
+
     void GenerateDisplay()
     {
         var display     = new GameObject( "display" );

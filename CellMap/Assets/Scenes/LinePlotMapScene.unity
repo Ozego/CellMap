@@ -246,18 +246,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 82822b6d0759be242818db44f84a503d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  size: {x: 960, y: 640}
+  size: {x: 800, y: 640}
   csErrosion: {fileID: 7200000, guid: 8a2d267736dd41141be427275501398f, type: 3}
   frameCount: 1024
-  lDensity: 220
-  clInertia: 1
-  slInertia: 1
-  clChaos: 1
-  slChaos: 1
+  lDensity: 164
+  clInertia: 0.9
+  slInertia: 1.6
+  clChaos: 0.5
+  slChaos: 1.5
   cInertia: 1
   sInertia: 1
   cChaos: 0
-  sChaos: 0
+  sChaos: 0.1
 --- !u!1 &1991346025
 GameObject:
   m_ObjectHideFlags: 0

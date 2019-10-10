@@ -2,7 +2,7 @@
 #pragma kernel GetHeads
 #pragma kernel DrawHeads
 #include "rngInclude.compute"
-#define GRIDWIDTH 128
+#define GRIDWIDTH 256
 
 struct Head
 {
@@ -41,8 +41,8 @@ void Clear (uint3 id : SV_DispatchThreadID)
 [numthreads(8,8,1)]
 void GetHeads (uint3 id : SV_DispatchThreadID)
 {
-    // if( id.y % GRIDWIDTH == 0 & id.x % GRIDWIDTH == 0)
-    if( id.x == Size.x>>1 & id.y == Size.y>>1)
+    if( id.y % GRIDWIDTH == 0 & id.x % GRIDWIDTH == 0)
+    // if( id.x == Size.x>>1 & id.y == Size.y>>1)
     {
         Head newHead;
         newHead.position = (float2)id.xy + ( rng2D( id.xy , Frame ) - .5 ) * GRIDWIDTH;

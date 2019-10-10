@@ -7,12 +7,21 @@ using Random = UnityEngine.Random;
 public class LinePlotMap : MonoBehaviour
 {
 //  Tag                 Access      Type            Name                        Set
-    [HideInInspector]   public      RenderTexture   HeightMapTexture;
-
     [SerializeField]    private     Vector2Int      size;
     [SerializeField]    private     ComputeShader   csErrosion;
+    [SerializeField]    private     int             frameCount = 320;
 
-                        private     RenderTexture   filterMapTexture;
+    [SerializeField]    private     int             lDensity                    = 10 ;
+    [SerializeField]    private     float           clInertia                   = 1.0f ;
+    [SerializeField]    private     float           slInertia                   = 0.5f ;
+    [SerializeField]    private     float           clChaos                     = 0.5f ;
+    [SerializeField]    private     float           slChaos                     = 0.5f ;
+    [SerializeField]    private     float           cInertia                    = 1.0f ;
+    [SerializeField]    private     float           sInertia                    = 1.0f ;
+    [SerializeField]    private     float           cChaos                      = 0.5f ;
+    [SerializeField]    private     float           sChaos                      = 0.5f ;
+
+                        private     RenderTexture   lineMapTexture;
                         private     MeshRenderer    displayRenderer;
                         private     ComputeBuffer[] headBuffers                 = new ComputeBuffer[2];
                         private     List<Head>      heads                       = new List<Head>();
@@ -43,21 +52,22 @@ public class LinePlotMap : MonoBehaviour
         GenerateTexutres();
         GenerateBuffers();
         GenerateMaps();
-        displayRenderer.material.SetTexture("_MainTex", filterMapTexture);
+        displayRenderer.material.SetTexture("_MainTex", lineMapTexture);
     }
 
-    void OnDestroy() // 
+    void OnDestroy() 
     {
-        HeightMapTexture.Release();
+        lineMapTexture.Release();
         foreach (var buffer in headBuffers) buffer.Release();
     }
+    private int frameOffset = 0;
     void Update()
     {
-        if (Time.frameCount % 320 == 0) ResetMaps();
-        // for (int i = 0; i < 63; i++)
+        frameCount = frameCount&0xFFFE;
+        if (Input.GetKeyDown("n")) frameOffset = (Time.frameCount+1)&0xFFFE; //For some reason the frame can only be reset on even frame counts
+        if ((Time.frameCount - frameOffset) % frameCount == 0) ResetMaps();
         DrawStep();
-        if(!Input.GetMouseButton(0)) displayRenderer.material.SetTexture("_MainTex", filterMapTexture);
-        else displayRenderer.material.SetTexture("_MainTex", HeightMapTexture);
+        displayRenderer.material.SetTexture("_MainTex", lineMapTexture);
     }
 
     void DrawStep()
@@ -78,7 +88,7 @@ public class LinePlotMap : MonoBehaviour
     void ResetMaps()
     {
         int ClearID = csErrosion.FindKernel( "Clear" );
-        csErrosion.SetTexture( ClearID, "FilterMap", filterMapTexture );
+        csErrosion.SetTexture( ClearID, "LineMap", lineMapTexture );
         csErrosion.Dispatch( ClearID, size.x / 8, size.y / 8, 1 );
         for (int i = 0; i < headBuffers.Length; i++)
         {
@@ -86,15 +96,15 @@ public class LinePlotMap : MonoBehaviour
             headBuffers[i] = new ComputeBuffer(maxHeads, Head.ByteSize, ComputeBufferType.Append);
             headBuffers[i].SetCounterValue(0);
         }
-        csErrosion.SetInt(      "lDensity",     Random.Range( 50,    200 ) );
-        csErrosion.SetFloat(    "clInertia",    Random.Range( 0.75f, 1.0f ) );
-        csErrosion.SetFloat(    "slInertia",    Random.Range( 0.9f,  1.1f ) );
-        csErrosion.SetFloat(    "clChaos",      Random.Range( 0.1f,  1.0f ) );
-        csErrosion.SetFloat(    "slChaos",      Random.Range( 0.1f,  1.0f ) );
-        csErrosion.SetFloat(    "cInertia",     Random.Range( 0.8f,  1.2f ) );
-        csErrosion.SetFloat(    "sInertia",     Random.Range( 0.8f,  1.2f ) );
-        csErrosion.SetFloat(    "cChaos",       Random.Range( 0.1f,  1.0f ) );
-        csErrosion.SetFloat(    "sChaos",       Random.Range( 0.1f,  1.0f ) );
+        csErrosion.SetInt(      "lDensity",     lDensity );
+        csErrosion.SetFloat(    "clInertia",    clInertia );
+        csErrosion.SetFloat(    "slInertia",    slInertia );
+        csErrosion.SetFloat(    "clChaos",      clChaos );
+        csErrosion.SetFloat(    "slChaos",      slChaos );
+        csErrosion.SetFloat(    "cInertia",     cInertia );
+        csErrosion.SetFloat(    "sInertia",     sInertia );
+        csErrosion.SetFloat(    "cChaos",       cChaos );
+        csErrosion.SetFloat(    "sChaos",       sChaos );
         int GetHeadsKID = csErrosion.FindKernel("GetHeads");
         csErrosion.Dispatch(GetHeadsKID, size.x / 8, size.y / 8, 1);
     }
@@ -111,16 +121,10 @@ public class LinePlotMap : MonoBehaviour
     }
     void GenerateTexutres()
     {
-        filterMapTexture = new RenderTexture( size.x, size.y, 24 );
-        filterMapTexture.enableRandomWrite = true;
-        filterMapTexture.Create();
-        filterMapTexture.filterMode = FilterMode.Bilinear;
-
-        HeightMapTexture = new RenderTexture( size.x, size.y, 24 );
-        HeightMapTexture.enableRandomWrite = true;
-
-
-        RenderTexture tRT = new RenderTexture(HeightMapTexture);
+        lineMapTexture = new RenderTexture( size.x, size.y, 24 );
+        lineMapTexture.enableRandomWrite = true;
+        lineMapTexture.Create();
+        lineMapTexture.filterMode = FilterMode.Point;
     }
     void GenerateBuffers()
     {
@@ -133,30 +137,30 @@ public class LinePlotMap : MonoBehaviour
     }
     void GenerateMaps()
     {
-        csErrosion.SetInt(   "lDensity",    10 );
-        csErrosion.SetFloat( "clInertia",   1.0f );
-        csErrosion.SetFloat( "slInertia",   0.5f );
-        csErrosion.SetFloat( "clChaos",     0.5f );
-        csErrosion.SetFloat( "slChaos",     0.5f );
-        csErrosion.SetFloat( "cInertia",    1.0f );
-        csErrosion.SetFloat( "sInertia",    1.0f );
-        csErrosion.SetFloat( "cChaos",      0.5f );
-        csErrosion.SetFloat( "sChaos",      0.5f );
+        csErrosion.SetInt(   "lDensity",    lDensity );
+        csErrosion.SetFloat( "clInertia",   clInertia );
+        csErrosion.SetFloat( "slInertia",   slInertia );
+        csErrosion.SetFloat( "clChaos",     clChaos );
+        csErrosion.SetFloat( "slChaos",     slChaos );
+        csErrosion.SetFloat( "cInertia",    cInertia );
+        csErrosion.SetFloat( "sInertia",    sInertia );
+        csErrosion.SetFloat( "cChaos",      cChaos );
+        csErrosion.SetFloat( "sChaos",      sChaos );
 
         int ClearID = csErrosion.FindKernel( "Clear" );
-        csErrosion.SetTexture( ClearID, "FilterMap", filterMapTexture );
+        csErrosion.SetTexture( ClearID, "LineMap", lineMapTexture );
         csErrosion.Dispatch( ClearID, size.x / 8, size.y / 8, 1 );
 
         int GetHeadsKID = csErrosion.FindKernel("GetHeads");
         csErrosion.SetInts("Size", new int[] { size.x, size.y });
         csErrosion.SetInt("Frame", Time.frameCount);
         csErrosion.SetBuffer(GetHeadsKID, "HeadAppendBuffer", headBuffers[AppendBufferID]);
-        csErrosion.SetTexture(GetHeadsKID, "FilterMap", filterMapTexture);
+        csErrosion.SetTexture(GetHeadsKID, "LineMap", lineMapTexture);
         csErrosion.Dispatch(GetHeadsKID, size.x / 8, size.y / 8, 1);
 
         ConsumeBufferID = AppendBufferID; AppendBufferID = (AppendBufferID + 1) % 2;
         int DrawHeadsKID = csErrosion.FindKernel("DrawHeads");
-        csErrosion.SetTexture(DrawHeadsKID, "FilterMap", filterMapTexture);
+        csErrosion.SetTexture(DrawHeadsKID, "LineMap", lineMapTexture);
         csErrosion.SetBuffer(DrawHeadsKID, "HeadAppendBuffer", headBuffers[AppendBufferID]);
         csErrosion.SetBuffer(DrawHeadsKID, "HeadConsumeBuffer", headBuffers[ConsumeBufferID]);
         csErrosion.Dispatch(DrawHeadsKID, size.x / 32, size.y / 32, 1);

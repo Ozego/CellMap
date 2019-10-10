@@ -2,7 +2,7 @@
 #pragma kernel GetHeads
 #pragma kernel DrawHeads
 #include "rngInclude.compute"
-#define GRIDWIDTH 1024
+#define GRIDWIDTH 128
 
 struct Head
 {
@@ -17,7 +17,7 @@ Red     Blue    Green   Alpha
 Height  ddX     ddY     Unmapped
 
 Tag                             Name                                            */
-RWTexture2D<float4>             FilterMap;
+RWTexture2D<float4>             LineMap;
 AppendStructuredBuffer<Head>    HeadAppendBuffer;
 ConsumeStructuredBuffer<Head>   HeadConsumeBuffer;
 int2                            Size;
@@ -35,26 +35,19 @@ float                           sChaos;
 [numthreads(8,8,1)]
 void Clear (uint3 id : SV_DispatchThreadID)
 {
-    // FilterMap[id.xy] = FilterMap[id.xy]*.75;
-    FilterMap[id.xy] = float4( 0.5, 0.5, 0., 0. );
+    // LineMap[id.xy] = LineMap[id.xy]*.75;
+    LineMap[id.xy] = float4( 0., 0., 0., 0. );
 }
 [numthreads(8,8,1)]
 void GetHeads (uint3 id : SV_DispatchThreadID)
 {
-    // uint2 noiseDimensions;
-    // BlueNoise.GetDimensions( noiseDimensions.x , noiseDimensions.y );
-    // float4 noiseVal = BlueNoise[ id.xy % noiseDimensions ];
-    // [branch] if(noiseVal.r>.99)
-
-    if( id.y % GRIDWIDTH == 0 & id.x % GRIDWIDTH == 0)
-    // if(rng2D( id.xy, Frame^8 )*rng2D( id.xy, Frame ) > .97)
-    // uint2 midPoint = uint2( (uint)(Size.x>>1), (uint)(Size.y>>1) ); // bitwise halfing
-    // if( id.x == midPoint.x & id.y == midPoint.y )
+    // if( id.y % GRIDWIDTH == 0 & id.x % GRIDWIDTH == 0)
+    if( id.x == Size.x>>1 & id.y == Size.y>>1)
     {
         Head newHead;
         newHead.position = (float2)id.xy + ( rng2D( id.xy , Frame ) - .5 ) * GRIDWIDTH;
         newHead.direction = float2(0.,1.);
-        newHead.speed = 8;
+        newHead.speed = 2;
         newHead.state = 1;
         HeadAppendBuffer.Append(newHead);
     }
@@ -64,8 +57,10 @@ void DrawHeads (uint3 id : SV_DispatchThreadID)
 {
     Head consumeHead = HeadConsumeBuffer.Consume();
     if( consumeHead.state == 0) return;                                         //If null return
-    if( consumeHead.speed < 1. ) return;                                        //If stationary return
+    if( consumeHead.speed < 1.0 ) return;                                        //If stationary return
+    
     float2 traversal = consumeHead.direction * consumeHead.speed;
+
     int dx1 = sign( traversal.x ), dx2 = dx1, dy1 = sign( traversal.y ), dy2 = 0;
     int longest  = abs( traversal.x );
     int shortest = abs( traversal.y );
@@ -81,11 +76,15 @@ void DrawHeads (uint3 id : SV_DispatchThreadID)
     {
         int modX = ( x % Size.x + Size.x ) % Size.x;
         int modY = ( y % Size.y + Size.y ) % Size.y;
-        //TODO: Detect diagonal Lines intersection
-        if(FilterMap[ int2( modX, modY ) ].a == 1. && i!=0 ) return;            //If traversing existing cell return
-        FilterMap[ int2( modX, modY ) ] = float4( (consumeHead.direction-.5)*.5+.5, 0., 1. );
+                                                                                //TODO: Detect diagonal Lines intersection
+        if(LineMap[ int2( modX, modY ) ].a == 1. && i!=0 ) return;              //If traversing existing cell return
+        
+        LineMap[ int2( modX, modY ) ] = float4( 1., 1., 1., 1. );               //Draw on map
         numerator += shortest;
         if ( !( numerator < longest ) ) {
+            int modDX = ( (x + dx2) % Size.x + Size.x ) % Size.x;
+            int modDY = ( (y + dy2) % Size.y + Size.y ) % Size.y;
+            if(LineMap[ int2( modDX, modDY ) ].a == 1. && i!=0 ) return;        //If shifting shortest check non-shifted cell to check for diagonal line traversal
             numerator -= longest;
             x += dx1;
             y += dy1;
@@ -96,36 +95,30 @@ void DrawHeads (uint3 id : SV_DispatchThreadID)
     }
 
     Head appendHead;
-    appendHead.direction    = normalize( consumeHead.direction * cInertia + rngVector2( id.x + ( id.y << 4 ), Frame ) * cChaos );
+    float a = atan2(consumeHead.direction.x,consumeHead.direction.y);
+    a+= (rng2D( id.xy, Frame + 32 )-.5) * sChaos;
+    appendHead.direction    = float2(sin(a),cos(a));
     appendHead.position     = consumeHead.position+consumeHead.direction * consumeHead.speed;
     appendHead.speed        = consumeHead.speed * clInertia + ( rng2D( id.xy, Frame ) * 2. - 1. ) * clChaos ;
     appendHead.state        = 1;
     HeadAppendBuffer.Append(appendHead);
 
     if(rng256(Frame,id.x)>lDensity)
+    // {
+    //     Head appendHeadChild;
+    //     appendHeadChild.direction   = normalize( consumeHead.direction * sInertia + rngVector2(  id.x + ( id.y << 4 ), Frame + 256 ) * sChaos);
+    //     appendHeadChild.position    = consumeHead.position+consumeHead.direction * consumeHead.speed;
+    //     appendHeadChild.speed       = consumeHead.speed * slInertia + ( rng2D( id.xy, Frame + 256 ) * 2. - 1. ) * slChaos ;
+    //     appendHeadChild.state       = 1;
+    //     HeadAppendBuffer.Append(appendHeadChild);
+    // }
+    // if(Frame!=0 & Frame%16==0)
     {
         Head appendHeadChild;
-        appendHeadChild.direction   = normalize( consumeHead.direction * sInertia + rngVector2(  id.x + ( id.y << 4 ), Frame + 256 ) * sChaos);
+        appendHeadChild.direction   = float2(-consumeHead.direction.y, consumeHead.direction.x); //normalize( consumeHead.direction * sInertia + rngVector2(  id.x + ( id.y << 4 ), Frame + 256 ) * sChaos);
         appendHeadChild.position    = consumeHead.position+consumeHead.direction * consumeHead.speed;
         appendHeadChild.speed       = consumeHead.speed * slInertia + ( rng2D( id.xy, Frame + 256 ) * 2. - 1. ) * slChaos ;
         appendHeadChild.state       = 1;
         HeadAppendBuffer.Append(appendHeadChild);
     }
 }
-
-// Append Consume Debug Drawer
-// [numthreads(8,8,1)]
-// void DrawHeads (uint3 id : SV_DispatchThreadID)
-// {
-//     Head consumeHead = HeadConsumeBuffer.Consume();
-//     uint2 posID = (uint2)consumeHead.position;
-//     if( FilterMap[posID].r == 1. )
-//     {
-//         FilterMap[posID] = float4( 0., 1., 0., 1. );
-//     }
-//     else
-//     {
-//         FilterMap[posID] = float4( 1., 0., 0., 1. );
-//     }
-//     HeadAppendBuffer.Append(consumeHead);
-// }

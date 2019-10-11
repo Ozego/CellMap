@@ -30,8 +30,8 @@ public class LinePlotMap : MonoBehaviour
     [SerializeField]    private     float       lineSpawnVariation              = 0.5f ;
     [SerializeField]    private     float       lineSpawnAngularAcceleration    = 1.0f ;
     [SerializeField]    private     float       lineSpawnAngularVariation       = 0.5f ;
-    [Space]
-    [SerializeField]    private     int         lineSpawnChance                 = 10 ;
+    [Space] [Range(0f,1f)]
+    [SerializeField]    private     float       lineSpawnChance                 = 0.5f ;
     [SerializeField]    private     float       spawnAngle                      = 0.5f ;
     [SerializeField]    private     float       spawnAngleVariation             = 0.0f ;
     [SerializeField]    private     bool        spawnSymmetrically              = false ;
@@ -95,8 +95,6 @@ public class LinePlotMap : MonoBehaviour
         if ((Time.frameCount - frameOffset) % frameCount == 0) ResetMaps();
         DrawStep();
         displayRenderer.material.SetTexture("_MainTex", lineMapTexture);
-        // lineSpawnChance++;
-        // csErrosion.SetInt(   "lineSpawnChance",             lineSpawnChance );
     }
 
     void DrawStep()
@@ -140,7 +138,7 @@ public class LinePlotMap : MonoBehaviour
         csErrosion.SetInt(   "gridSize",                        gridSize);
         csErrosion.SetFloat( "initialDirection",                initialDirection);
         csErrosion.SetFloat( "initialDirectionVariation",       initialDirectionVariation);
-        csErrosion.SetInt(   "lineSpawnChance",                 lineSpawnChance);
+        csErrosion.SetFloat( "lineSpawnChance",                 1f - lineSpawnChance);
         csErrosion.SetFloat( "lineAcceleration",                lineAcceleration);
         csErrosion.SetFloat( "lineSpawnAcceleration",           lineSpawnAcceleration);
         csErrosion.SetFloat( "lineVariation",                   lineVariation);
@@ -213,5 +211,6 @@ public class LinePlotMap : MonoBehaviour
         byte[] b = t2d.EncodeToPNG();
         string p = String.Format( "{0}/{1}{2}.png", Application.persistentDataPath, this.name, DateTime.Now.GetHashCode() );
         System.IO.File.WriteAllBytes(p,b);
+        Debug.Log("Saved file: " + p);
     }
 }

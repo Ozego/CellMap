@@ -2,6 +2,7 @@
 #pragma kernel GetHeads
 #pragma kernel DrawHeads
 #include "rngInclude.compute"
+#include "TrigConst.compute"
 
 struct Head
 {
@@ -20,23 +21,23 @@ Tag                             Name                                            
 RWTexture2D<float4>             LineMap;
 AppendStructuredBuffer<Head>    HeadAppendBuffer;
 ConsumeStructuredBuffer<Head>   HeadConsumeBuffer;
-int2                            Size;
-int                             Frame;
-int                             gridSize;
-float                           initialDirection;
-float                           initialDirectionVariation;
-int                             lineSpawnChance;
-float                           lineAcceleration;
-float                           lineSpawnAcceleration;
-float                           lineVariation;
-float                           lineSpawnVariation;
-float                           lineAngularAcceleration;
-float                           lineSpawnAngularAcceleration;
-float                           lineAngularVariation;
-float                           lineSpawnAngularVariation;
-float                           spawnAngle;
-float                           spawnAngleVariation;
-int                             boolArray;
+int2    Size;
+int     Frame;
+int     gridSize;
+float   initialDirection;
+float   initialDirectionVariation;
+float   lineSpawnChance;
+float   lineAcceleration;
+float   lineSpawnAcceleration;
+float   lineVariation;
+float   lineSpawnVariation;
+float   lineAngularAcceleration;
+float   lineSpawnAngularAcceleration;
+float   lineAngularVariation;
+float   lineSpawnAngularVariation;
+float   spawnAngle;
+float   spawnAngleVariation;
+int     boolArray;
 
 [numthreads(8,8,1)]
 void Clear (uint3 id : SV_DispatchThreadID)
@@ -52,7 +53,8 @@ void GetHeads (uint3 id : SV_DispatchThreadID)
     {
         Head newHead;
         newHead.position            = (float2)id.xy + ( rng2D( id.xy , Frame ) - .5 ) * gridSize;
-        newHead.direction           = float2(0.,1.);
+        float angle = ( initialDirection + (rng2D( id.xy, Frame + 0x1111 ) - .5 ) * initialDirectionVariation ) * PI ;
+        newHead.direction           = float2( sin( angle ), cos( angle ) );
         newHead.speed               = 2;
         newHead.angularMomentum     = 0;
         newHead.state               = 1;
@@ -111,19 +113,13 @@ void DrawHeads (uint3 id : SV_DispatchThreadID)
     appendHead.state            = 1;
     HeadAppendBuffer.Append(appendHead);
 
-    if(rng256(Frame,id.x)>lineSpawnChance)
-    // {
-    //     Head appendHeadChild;
-    //     appendHeadChild.direction   = normalize( consumeHead.direction * lineSpawnAngularAcceleration + rngVector2(  id.x + ( id.y << 4 ), Frame + 256 ) * lineSpawnAngularVariation);
-    //     appendHeadChild.position    = consumeHead.position+consumeHead.direction * consumeHead.speed;
-    //     appendHeadChild.speed       = consumeHead.speed * lineSpawnAcceleration + ( rng2D( id.xy, Frame + 256 ) * 2. - 1. ) * lineSpawnVariation ;
-    //     appendHeadChild.state       = 1;
-    //     HeadAppendBuffer.Append(appendHeadChild);
-    // }
-    // if(Frame!=0 & Frame%16==0)
+    if(rng2D( id.xy, Frame + 0x2111 ) >lineSpawnChance)
     {
         Head appendHeadChild;
-        appendHeadChild.direction       = float2(-consumeHead.direction.y, consumeHead.direction.x); //normalize( consumeHead.direction * lineSpawnAngularAcceleration + rngVector2(  id.x + ( id.y << 4 ), Frame + 256 ) * lineSpawnAngularVariation);
+        float invSign = 1.;
+        if ( boolArray^0xFFFE == 0x0001) invSign = sign(rng2D(id.xy,Frame + 0x3111)-0.5);
+        a += invSign * ( spawnAngle ) * PI;
+        appendHeadChild.direction       = float2(sin(a),cos(a)); //normalize( consumeHead.direction * lineSpawnAngularAcceleration + rngVector2(  id.x + ( id.y << 4 ), Frame + 256 ) * lineSpawnAngularVariation);
         appendHeadChild.position        = consumeHead.position+consumeHead.direction * consumeHead.speed;
         appendHeadChild.speed           = consumeHead.speed * lineSpawnAcceleration + ( rng2D( id.xy, Frame + 256 ) * 2. - 1. ) * lineSpawnVariation ;
         appendHeadChild.angularMomentum = 0.;

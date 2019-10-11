@@ -249,16 +249,21 @@ MonoBehaviour:
   UseScreenSize: 1
   size: {x: 744, y: 632}
   gridSize: 128
+  initialDirection: 0.25
+  initialDirectionVariation: 0
   frameCount: 256
   lineAcceleration: 0.9
   lineVariation: 0.5
   lineAngularAcceleration: 1
-  lineAngularVariation: 0.1
+  lineAngularVariation: 0
   lineSpawnAcceleration: 1.5
   lineSpawnVariation: 0.5
   lineSpawnAngularAcceleration: 1
   lineSpawnAngularVariation: 0.5
-  lineSpawnChance: 160
+  lineSpawnChance: 0.33
+  spawnAngle: 0.5
+  spawnAngleVariation: 0
+  spawnSymmetrically: 1
   csErrosion: {fileID: 7200000, guid: 8a2d267736dd41141be427275501398f, type: 3}
 --- !u!1 &1991346025
 GameObject:

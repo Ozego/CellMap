@@ -2,13 +2,13 @@
 #pragma kernel GetHeads
 #pragma kernel DrawHeads
 #include "rngInclude.compute"
-#define GRIDWIDTH 256
 
 struct Head
 {
     float2  position;
     float2  direction;
     float   speed;
+    float   angularMomentum;
     uint    state; // 0b0000000000000000 is dead
 };
 /*
@@ -22,15 +22,21 @@ AppendStructuredBuffer<Head>    HeadAppendBuffer;
 ConsumeStructuredBuffer<Head>   HeadConsumeBuffer;
 int2                            Size;
 int                             Frame;
-int                             lDensity;
-float                           clInertia;
-float                           slInertia;
-float                           clChaos;
-float                           slChaos;
-float                           cInertia;
-float                           sInertia;
-float                           cChaos;
-float                           sChaos;
+int                             gridSize;
+float                           initialDirection;
+float                           initialDirectionVariation;
+int                             lineSpawnChance;
+float                           lineAcceleration;
+float                           lineSpawnAcceleration;
+float                           lineVariation;
+float                           lineSpawnVariation;
+float                           lineAngularAcceleration;
+float                           lineSpawnAngularAcceleration;
+float                           lineAngularVariation;
+float                           lineSpawnAngularVariation;
+float                           spawnAngle;
+float                           spawnAngleVariation;
+int                             boolArray;
 
 [numthreads(8,8,1)]
 void Clear (uint3 id : SV_DispatchThreadID)
@@ -41,14 +47,15 @@ void Clear (uint3 id : SV_DispatchThreadID)
 [numthreads(8,8,1)]
 void GetHeads (uint3 id : SV_DispatchThreadID)
 {
-    if( id.y % GRIDWIDTH == 0 & id.x % GRIDWIDTH == 0)
+    if( id.y % gridSize == 0 & id.x % gridSize == 0)
     // if( id.x == Size.x>>1 & id.y == Size.y>>1)
     {
         Head newHead;
-        newHead.position = (float2)id.xy + ( rng2D( id.xy , Frame ) - .5 ) * GRIDWIDTH;
-        newHead.direction = float2(0.,1.);
-        newHead.speed = 2;
-        newHead.state = 1;
+        newHead.position            = (float2)id.xy + ( rng2D( id.xy , Frame ) - .5 ) * gridSize;
+        newHead.direction           = float2(0.,1.);
+        newHead.speed               = 2;
+        newHead.angularMomentum     = 0;
+        newHead.state               = 1;
         HeadAppendBuffer.Append(newHead);
     }
 }
@@ -96,29 +103,31 @@ void DrawHeads (uint3 id : SV_DispatchThreadID)
 
     Head appendHead;
     float a = atan2(consumeHead.direction.x,consumeHead.direction.y);
-    a+= (rng2D( id.xy, Frame + 32 )-.5) * sChaos;
-    appendHead.direction    = float2(sin(a),cos(a));
-    appendHead.position     = consumeHead.position+consumeHead.direction * consumeHead.speed;
-    appendHead.speed        = consumeHead.speed * clInertia + ( rng2D( id.xy, Frame ) * 2. - 1. ) * clChaos ;
-    appendHead.state        = 1;
+    a+= (rng2D( id.xy, Frame + 32 )-.5) * lineAngularVariation;
+    appendHead.direction        = float2(sin(a),cos(a));
+    appendHead.position         = consumeHead.position+consumeHead.direction * consumeHead.speed;
+    appendHead.speed            = consumeHead.speed * lineAcceleration + ( rng2D( id.xy, Frame ) * 2. - 1. ) * lineVariation ;
+    appendHead.angularMomentum  = 0.;
+    appendHead.state            = 1;
     HeadAppendBuffer.Append(appendHead);
 
-    if(rng256(Frame,id.x)>lDensity)
+    if(rng256(Frame,id.x)>lineSpawnChance)
     // {
     //     Head appendHeadChild;
-    //     appendHeadChild.direction   = normalize( consumeHead.direction * sInertia + rngVector2(  id.x + ( id.y << 4 ), Frame + 256 ) * sChaos);
+    //     appendHeadChild.direction   = normalize( consumeHead.direction * lineSpawnAngularAcceleration + rngVector2(  id.x + ( id.y << 4 ), Frame + 256 ) * lineSpawnAngularVariation);
     //     appendHeadChild.position    = consumeHead.position+consumeHead.direction * consumeHead.speed;
-    //     appendHeadChild.speed       = consumeHead.speed * slInertia + ( rng2D( id.xy, Frame + 256 ) * 2. - 1. ) * slChaos ;
+    //     appendHeadChild.speed       = consumeHead.speed * lineSpawnAcceleration + ( rng2D( id.xy, Frame + 256 ) * 2. - 1. ) * lineSpawnVariation ;
     //     appendHeadChild.state       = 1;
     //     HeadAppendBuffer.Append(appendHeadChild);
     // }
     // if(Frame!=0 & Frame%16==0)
     {
         Head appendHeadChild;
-        appendHeadChild.direction   = float2(-consumeHead.direction.y, consumeHead.direction.x); //normalize( consumeHead.direction * sInertia + rngVector2(  id.x + ( id.y << 4 ), Frame + 256 ) * sChaos);
-        appendHeadChild.position    = consumeHead.position+consumeHead.direction * consumeHead.speed;
-        appendHeadChild.speed       = consumeHead.speed * slInertia + ( rng2D( id.xy, Frame + 256 ) * 2. - 1. ) * slChaos ;
-        appendHeadChild.state       = 1;
+        appendHeadChild.direction       = float2(-consumeHead.direction.y, consumeHead.direction.x); //normalize( consumeHead.direction * lineSpawnAngularAcceleration + rngVector2(  id.x + ( id.y << 4 ), Frame + 256 ) * lineSpawnAngularVariation);
+        appendHeadChild.position        = consumeHead.position+consumeHead.direction * consumeHead.speed;
+        appendHeadChild.speed           = consumeHead.speed * lineSpawnAcceleration + ( rng2D( id.xy, Frame + 256 ) * 2. - 1. ) * lineSpawnVariation ;
+        appendHeadChild.angularMomentum = 0.;
+        appendHeadChild.state           = 1;
         HeadAppendBuffer.Append(appendHeadChild);
     }
 }

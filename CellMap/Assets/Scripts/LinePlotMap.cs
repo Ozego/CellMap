@@ -7,19 +7,36 @@ using Random = UnityEngine.Random;
 public class LinePlotMap : MonoBehaviour
 {
 //  Tag                 Access      Type            Name                        Set
-    [SerializeField]    private     Vector2Int      size;
-    [SerializeField]    private     ComputeShader   csErrosion;
-    [SerializeField]    private     int             frameCount = 320;
+    
+    [Header("Line Map Attributes")]
+    [SerializeField]    private     Boolean     UseScreenSize                   = false;
+    [Tooltip("Size of the bitmap the lines are plotted on. \nMap size is floored to a multiple of 8")]
+    [SerializeField]    private     Vector2Int  size;
+    [Tooltip("Size of the hidden jittered grid the initiating lines are plotted on.")]
+    [SerializeField]    private     int         gridSize                        = 256 ;
+    [SerializeField]    private     float       initialDirection                = 0f;
+    [SerializeField]    private     float       initialDirectionVariation       = 1f;
+    [Tooltip("Frame count before new simulation or next step of multi parameter simulation. \nFrame count is floored to a multiple of 2")]
+    [SerializeField]    private     int         frameCount                      = 320;
+    
+    [Header("Line Drawing Attributes")]
+    [SerializeField]    private     float       lineAcceleration                = 1.0f ;
+    [SerializeField]    private     float       lineVariation                   = 0.5f ;
+    [SerializeField]    private     float       lineAngularAcceleration         = 1.0f ;
+    [SerializeField]    private     float       lineAngularVariation            = 0.5f ;
 
-    [SerializeField]    private     int             lDensity                    = 10 ;
-    [SerializeField]    private     float           clInertia                   = 1.0f ;
-    [SerializeField]    private     float           slInertia                   = 0.5f ;
-    [SerializeField]    private     float           clChaos                     = 0.5f ;
-    [SerializeField]    private     float           slChaos                     = 0.5f ;
-    [SerializeField]    private     float           cInertia                    = 1.0f ;
-    [SerializeField]    private     float           sInertia                    = 1.0f ;
-    [SerializeField]    private     float           cChaos                      = 0.5f ;
-    [SerializeField]    private     float           sChaos                      = 0.5f ;
+    [Header("Line Spawning Attributes")]
+    [SerializeField]    private     float       lineSpawnAcceleration           = 0.5f ;
+    [SerializeField]    private     float       lineSpawnVariation              = 0.5f ;
+    [SerializeField]    private     float       lineSpawnAngularAcceleration    = 1.0f ;
+    [SerializeField]    private     float       lineSpawnAngularVariation       = 0.5f ;
+    [Space]
+    [SerializeField]    private     int         lineSpawnChance                 = 10 ;
+    [SerializeField]    private     float       spawnAngle                      = 0.5f ;
+    [SerializeField]    private     float       spawnAngleVariation             = 0.0f ;
+    [SerializeField]    private     bool        spawnSymmetrically              = false ;
+    [Header("Required Components")]
+    [SerializeField]    private     ComputeShader   csErrosion;
 
                         private     RenderTexture   lineMapTexture;
                         private     MeshRenderer    displayRenderer;
@@ -34,20 +51,29 @@ public class LinePlotMap : MonoBehaviour
         public Vector2 position;
         public Vector2 direction;
         public float   speed;
+        public float   angularMomentum;
         public uint    state;
         
-        static public int ByteSize{get{return sizeof(float)*5+sizeof(int);}}
+        static public int ByteSize{get{return sizeof(float)*6+sizeof(int);}}
     }
     //Editor
     void OnGizmos()
     {
     }
-    void OnValidate(){}
+    void OnValidate()
+    {
+        size.x     = size.x     & 0xFFF8; //if( size.x % 8 != 0 ) size.x = Mathf.CeilToInt( (float)size.x / 8f ) * 8;
+        size.y     = size.y     & 0xFFF8; //if( size.y % 8 != 0 ) size.y = Mathf.CeilToInt( (float)size.y / 8f ) * 8;
+        frameCount = frameCount & 0xFFFE; 
+    }
     //Game
     void Awake()
     {
-        if( size.x % 8 != 0 ) size.x = Mathf.CeilToInt( (float)size.x / 8f ) * 8;
-        if( size.y % 8 != 0 ) size.y = Mathf.CeilToInt( (float)size.y / 8f ) * 8;
+        if(UseScreenSize)
+        {
+            size.x = (Screen.width  + 7) & 0xFFF8;
+            size.y = (Screen.height + 7) & 0xFFF8;
+        }
         GenerateDisplay();
         GenerateTexutres();
         GenerateBuffers();
@@ -63,12 +89,14 @@ public class LinePlotMap : MonoBehaviour
     private int frameOffset = 0;
     void Update()
     {
-        frameCount = frameCount&0xFFFE;
+        if (Input.GetKeyDown("s")) SaveTexture(lineMapTexture);
         if (Input.GetKeyDown("c")) ClearMap();
-        if (Input.GetKeyDown("n")) frameOffset = (Time.frameCount+1)&0xFFFE;    //For some reason the frame can only be reset on even frame counts
+        if (Input.GetKeyDown("n")) frameOffset = (Time.frameCount+1) & 0xFFFE;    //For some reason the frame can only be reset on even frame counts
         if ((Time.frameCount - frameOffset) % frameCount == 0) ResetMaps();
         DrawStep();
         displayRenderer.material.SetTexture("_MainTex", lineMapTexture);
+        // lineSpawnChance++;
+        // csErrosion.SetInt(   "lineSpawnChance",             lineSpawnChance );
     }
 
     void DrawStep()
@@ -89,15 +117,7 @@ public class LinePlotMap : MonoBehaviour
     void ResetMaps()
     {
         ClearMap();
-        csErrosion.SetInt("lDensity", lDensity);
-        csErrosion.SetFloat("clInertia", clInertia);
-        csErrosion.SetFloat("slInertia", slInertia);
-        csErrosion.SetFloat("clChaos", clChaos);
-        csErrosion.SetFloat("slChaos", slChaos);
-        csErrosion.SetFloat("cInertia", cInertia);
-        csErrosion.SetFloat("sInertia", sInertia);
-        csErrosion.SetFloat("cChaos", cChaos);
-        csErrosion.SetFloat("sChaos", sChaos);
+        SetShaderAttributes();
         int GetHeadsKID = csErrosion.FindKernel("GetHeads");
         csErrosion.Dispatch(GetHeadsKID, size.x / 8, size.y / 8, 1);
     }
@@ -113,6 +133,27 @@ public class LinePlotMap : MonoBehaviour
             headBuffers[i] = new ComputeBuffer(maxHeads, Head.ByteSize, ComputeBufferType.Append);
             headBuffers[i].SetCounterValue(0);
         }
+    }
+
+    private void SetShaderAttributes()
+    {
+        csErrosion.SetInt(   "gridSize",                        gridSize);
+        csErrosion.SetFloat( "initialDirection",                initialDirection);
+        csErrosion.SetFloat( "initialDirectionVariation",       initialDirectionVariation);
+        csErrosion.SetInt(   "lineSpawnChance",                 lineSpawnChance);
+        csErrosion.SetFloat( "lineAcceleration",                lineAcceleration);
+        csErrosion.SetFloat( "lineSpawnAcceleration",           lineSpawnAcceleration);
+        csErrosion.SetFloat( "lineVariation",                   lineVariation);
+        csErrosion.SetFloat( "lineSpawnVariation",              lineSpawnVariation);
+        csErrosion.SetFloat( "lineAngularAcceleration",         lineAngularAcceleration);
+        csErrosion.SetFloat( "lineSpawnAngularAcceleration",    lineSpawnAngularAcceleration);
+        csErrosion.SetFloat( "lineAngularVariation",            lineAngularVariation);
+        csErrosion.SetFloat( "lineSpawnAngularVariation",       lineSpawnAngularVariation);
+        csErrosion.SetFloat( "spawnAngle",                      spawnAngle);
+        csErrosion.SetFloat( "spawnAngleVariation",             spawnAngleVariation);
+        int boolArray                        = 0b0000_0000_0000_0000;
+        if(spawnSymmetrically) boolArray    |= 0b0000_0000_0000_0001;
+        csErrosion.SetInt(   "boolArray",                       boolArray);
     }
 
     void GenerateDisplay()
@@ -144,16 +185,7 @@ public class LinePlotMap : MonoBehaviour
     }
     void GenerateMaps()
     {
-        csErrosion.SetInt(   "lDensity",    lDensity );
-        csErrosion.SetFloat( "clInertia",   clInertia );
-        csErrosion.SetFloat( "slInertia",   slInertia );
-        csErrosion.SetFloat( "clChaos",     clChaos );
-        csErrosion.SetFloat( "slChaos",     slChaos );
-        csErrosion.SetFloat( "cInertia",    cInertia );
-        csErrosion.SetFloat( "sInertia",    sInertia );
-        csErrosion.SetFloat( "cChaos",      cChaos );
-        csErrosion.SetFloat( "sChaos",      sChaos );
-
+        SetShaderAttributes();
         int ClearID = csErrosion.FindKernel( "Clear" );
         csErrosion.SetTexture( ClearID, "LineMap", lineMapTexture );
         csErrosion.Dispatch( ClearID, size.x / 8, size.y / 8, 1 );
@@ -171,5 +203,15 @@ public class LinePlotMap : MonoBehaviour
         csErrosion.SetBuffer(DrawHeadsKID, "HeadAppendBuffer", headBuffers[AppendBufferID]);
         csErrosion.SetBuffer(DrawHeadsKID, "HeadConsumeBuffer", headBuffers[ConsumeBufferID]);
         csErrosion.Dispatch(DrawHeadsKID, size.x / 32, size.y / 32, 1);
+    }
+    void SaveTexture(RenderTexture rt)
+    {
+        Texture2D t2d = new Texture2D(rt.width,rt.height,TextureFormat.RGBA32,false);
+        RenderTexture.active = rt;
+        t2d.ReadPixels(new Rect(0,0,rt.width,rt.height),0,0);
+        RenderTexture.active = null;
+        byte[] b = t2d.EncodeToPNG();
+        string p = String.Format( "{0}/{1}{2}.png", Application.persistentDataPath, this.name, DateTime.Now.GetHashCode() );
+        System.IO.File.WriteAllBytes(p,b);
     }
 }

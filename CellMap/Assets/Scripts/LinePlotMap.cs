@@ -10,6 +10,7 @@ public class LinePlotMap : MonoBehaviour
     
     [Header("Line Map Attributes")]
     [SerializeField]    private     Boolean     UseScreenSize                   = false;
+    [SerializeField]    private     Boolean     RandomizeAttributes             = false;
     [Tooltip("Size of the bitmap the lines are plotted on. \nMap size is floored to a multiple of 8")]
     [SerializeField]    private     Vector2Int  size;
     [Tooltip("Size of the hidden jittered grid the initiating lines are plotted on.")]
@@ -135,6 +136,11 @@ public class LinePlotMap : MonoBehaviour
 
     private void SetShaderAttributes()
     {
+        if(RandomizeAttributes)
+        {
+            SetRandomShaderAttributes();
+            return;
+        }
         csErrosion.SetInt(   "gridSize",                        gridSize);
         csErrosion.SetFloat( "initialDirection",                initialDirection);
         csErrosion.SetFloat( "initialDirectionVariation",       initialDirectionVariation);
@@ -153,11 +159,32 @@ public class LinePlotMap : MonoBehaviour
         if(spawnSymmetrically) boolArray    |= 0b0000_0000_0000_0001;
         csErrosion.SetInt(   "boolArray",                       boolArray);
     }
+    
+    private void SetRandomShaderAttributes()
+    {
+        csErrosion.SetInt(   "gridSize",                        Random.Range(0, gridSize*2));
+        csErrosion.SetFloat( "initialDirection",                Random.Range(0, initialDirection*2f));
+        csErrosion.SetFloat( "initialDirectionVariation",       Random.Range(0, initialDirectionVariation*2f));
+        csErrosion.SetFloat( "lineSpawnChance",                 Random.Range(0, (1f -lineSpawnChance)*2f));
+        csErrosion.SetFloat( "lineAcceleration",                Random.Range(0, lineAcceleration*2f));
+        csErrosion.SetFloat( "lineSpawnAcceleration",           Random.Range(0, lineSpawnAcceleration*2f));
+        csErrosion.SetFloat( "lineVariation",                   Random.Range(0, lineVariation*2f));
+        csErrosion.SetFloat( "lineSpawnVariation",              Random.Range(0, lineSpawnVariation*2f));
+        csErrosion.SetFloat( "lineAngularAcceleration",         Random.Range(0, lineAngularAcceleration*2f));
+        csErrosion.SetFloat( "lineSpawnAngularAcceleration",    Random.Range(0, lineSpawnAngularAcceleration*2f));
+        csErrosion.SetFloat( "lineAngularVariation",            Random.Range(0, lineAngularVariation*2f));
+        csErrosion.SetFloat( "lineSpawnAngularVariation",       Random.Range(0, lineSpawnAngularVariation*2f));
+        csErrosion.SetFloat( "spawnAngle",                      Random.Range(0, spawnAngle*2f));
+        csErrosion.SetFloat( "spawnAngleVariation",             Random.Range(0, spawnAngleVariation*2f));
+        int boolArray                                           =  0b0000_0000_0000_0000;
+        if(Random.value > 0.5f & spawnSymmetrically) boolArray  |= 0b0000_0000_0000_0001;
+        csErrosion.SetInt(   "boolArray",                       boolArray);
+    }
 
     void GenerateDisplay()
     {
         var display     = new GameObject( "display" );
-        var meshFilter  = display.AddComponent<MeshFilter>();
+        var meshFilter  = display.AddComponent<MeshFilter>(); 
         displayRenderer = display.AddComponent<MeshRenderer>();
         meshFilter.mesh = MeshGenerator.GetQuad( size.x, size.y );
 

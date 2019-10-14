@@ -247,6 +247,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   UseScreenSize: 1
+  RandomizeAttributes: 1
   size: {x: 744, y: 632}
   gridSize: 128
   initialDirection: 0.25

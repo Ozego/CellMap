@@ -247,11 +247,62 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   UseScreenSize: 1
-  RandomizeAttributes: 1
+  RandomizeAttributes: 0
+  size: {x: 1040, y: 640}
+  gridSize: 256
+  initialSpeed: 4
+  initialDirection: 0
+  initialDirectionVariation: 1
+  frameCount: 128
+  lineAcceleration: 0.98
+  lineVariation: 0.27
+  lineAngularAcceleration: 1.05
+  lineAngularVariation: 0.03
+  lineSpawnAcceleration: 1.05
+  lineSpawnVariation: 0.1
+  lineSpawnAngularAcceleration: 0.81
+  lineSpawnAngularVariation: 0.1
+  lineSpawnChance: 0.226
+  spawnAngle: 0
+  spawnAngleVariation: 0.1
+  spawnSymmetrically: 1
+  csErrosion: {fileID: 7200000, guid: 8a2d267736dd41141be427275501398f, type: 3}
+--- !u!1 &1755830155
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1755830157}
+  - component: {fileID: 1755830156}
+  m_Layer: 0
+  m_Name: LinePlotMapController (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!114 &1755830156
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1755830155}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 82822b6d0759be242818db44f84a503d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  UseScreenSize: 1
+  RandomizeAttributes: 0
   size: {x: 744, y: 632}
   gridSize: 128
-  initialDirection: 0.25
-  initialDirectionVariation: 0
+  initialSpeed: 2
+  initialDirection: 1
+  initialDirectionVariation: 1
   frameCount: 256
   lineAcceleration: 0.9
   lineVariation: 0.5
@@ -266,6 +317,20 @@ MonoBehaviour:
   spawnAngleVariation: 0
   spawnSymmetrically: 1
   csErrosion: {fileID: 7200000, guid: 8a2d267736dd41141be427275501398f, type: 3}
+--- !u!4 &1755830157
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1755830155}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 10, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 3
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1991346025
 GameObject:
   m_ObjectHideFlags: 0

@@ -15,6 +15,7 @@ public class LinePlotMap : MonoBehaviour
     [SerializeField]    private     Vector2Int  size;
     [Tooltip("Size of the hidden jittered grid the initiating lines are plotted on.")]
     [SerializeField]    private     int         gridSize                        = 256 ;
+    [SerializeField]    private     float       initialSpeed                    = 2f;
     [SerializeField]    private     float       initialDirection                = 0f;
     [SerializeField]    private     float       initialDirectionVariation       = 1f;
     [Tooltip("Frame count before new simulation or next step of multi parameter simulation. \nFrame count is floored to a multiple of 2")]
@@ -142,6 +143,7 @@ public class LinePlotMap : MonoBehaviour
             return;
         }
         csErrosion.SetInt(   "gridSize",                        gridSize);
+        csErrosion.SetFloat( "initialSpeed",                    initialSpeed);
         csErrosion.SetFloat( "initialDirection",                initialDirection);
         csErrosion.SetFloat( "initialDirectionVariation",       initialDirectionVariation);
         csErrosion.SetFloat( "lineSpawnChance",                 1f - lineSpawnChance);
@@ -163,15 +165,16 @@ public class LinePlotMap : MonoBehaviour
     private void SetRandomShaderAttributes()
     {
         csErrosion.SetInt(   "gridSize",                        Random.Range(0, gridSize*2));
+        csErrosion.SetFloat( "initialSpeed",                    Random.Range(0, initialSpeed*2f));
         csErrosion.SetFloat( "initialDirection",                Random.Range(0, initialDirection*2f));
         csErrosion.SetFloat( "initialDirectionVariation",       Random.Range(0, initialDirectionVariation*2f));
-        csErrosion.SetFloat( "lineSpawnChance",                 Random.Range(0, (1f -lineSpawnChance)*2f));
-        csErrosion.SetFloat( "lineAcceleration",                Random.Range(0, lineAcceleration*2f));
-        csErrosion.SetFloat( "lineSpawnAcceleration",           Random.Range(0, lineSpawnAcceleration*2f));
+        csErrosion.SetFloat( "lineSpawnChance",                 1f - Random.value * lineSpawnChance);
+        csErrosion.SetFloat( "lineAcceleration",                Random.Range(-1f, 1f)*Mathf.Abs(1f-lineAcceleration)+1f);
+        csErrosion.SetFloat( "lineSpawnAcceleration",           Random.Range(-1f, 1f)*Mathf.Abs(1f-lineSpawnAcceleration)+1f);
         csErrosion.SetFloat( "lineVariation",                   Random.Range(0, lineVariation*2f));
         csErrosion.SetFloat( "lineSpawnVariation",              Random.Range(0, lineSpawnVariation*2f));
-        csErrosion.SetFloat( "lineAngularAcceleration",         Random.Range(0, lineAngularAcceleration*2f));
-        csErrosion.SetFloat( "lineSpawnAngularAcceleration",    Random.Range(0, lineSpawnAngularAcceleration*2f));
+        csErrosion.SetFloat( "lineAngularAcceleration",         Random.Range(-1f, 1f)*Mathf.Abs(1f-lineAngularAcceleration)+1f);
+        csErrosion.SetFloat( "lineSpawnAngularAcceleration",    Random.Range(-1f, 1f)*Mathf.Abs(1f-lineSpawnAngularAcceleration)+1f);
         csErrosion.SetFloat( "lineAngularVariation",            Random.Range(0, lineAngularVariation*2f));
         csErrosion.SetFloat( "lineSpawnAngularVariation",       Random.Range(0, lineSpawnAngularVariation*2f));
         csErrosion.SetFloat( "spawnAngle",                      Random.Range(0, spawnAngle*2f));

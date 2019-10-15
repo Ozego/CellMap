@@ -1,5 +1,6 @@
 //Naive self shuffling 256 integer hashtable inspired by DooM 
 //Copyleft Ozeg 2019, all rights reversed
+
 static const int HashTable256[256] =
 {
      40, 158, 194,  82, 186, 223,   4,   5,  23,  70,  47, 221, 132,  77, 152, 118, 
@@ -29,15 +30,23 @@ float rngFloat(int id, int seed)
 };
 float rng2D(int2 id, int seed)
 {
-    return rngFloat( id.x + ( id.y << 4 ), rng256( seed, id.x ^ id.y ));
+    return rngFloat( (id.x & 0x55555555) | (id.y & 0xAAAAAAAA) , seed);
 };
 float2 rngVector2(int id, int seed)
 {
-    int idX = id ^ 43690; //0b10101010;
-    int idY = id ^ 21845; //0b01010101;
+    int idX = id ^ 0x5555;
+    int idY = id ^ 0xAAAA;
     return float2
     (
-        rngFloat(idX,seed+1)*2.-1.,
-        rngFloat(idY,seed)*2.-1.
+        rngFloat(idX, seed) * 2. - 1. ,
+        rngFloat(idY, seed) * 2. - 1.
+    );
+};
+float2 rng2DVector2(int2 id, int seed)
+{
+    return float2
+    (
+        rngFloat(id.x ^ 0x5A5A + id.y ^ 0xA5A5, seed) * 2. - 1. ,
+        rngFloat(id.y ^ 0xA5A5 + id.x ^ 0x5A5A, seed) * 2. - 1.
     );
 };

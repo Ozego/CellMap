@@ -1,5 +1,7 @@
 ﻿#pragma kernel Clear
-#pragma kernel GetHeads
+#pragma kernel GetHead
+#pragma kernel GetHeadsOnGrid
+#pragma kernel GetHeadsOnLine
 #pragma kernel DrawHeads
 #include "rngInclude.compute"
 #include "TrigConst.compute"
@@ -40,13 +42,27 @@ int     boolArray;
 void Clear (uint3 id : SV_DispatchThreadID)
 {
     // LineMap[id.xy] = LineMap[id.xy]*.75;
-    LineMap[id.xy] *= 0.;//float4( 0.9, 0.9, 0.9, 0. );
+    LineMap[id.xy] = float4( 0.0, 0.0, 0.0, 0.0 );
 }
 [numthreads(8,8,1)]
-void GetHeads (uint3 id : SV_DispatchThreadID)
+void GetHead (uint3 id : SV_DispatchThreadID)
+{
+    if( id.x == Size.x/2 & id.y == Size.y/2 )
+    {
+        Head newHead;
+        newHead.position            = (float2)id.xy ;
+        float angle = ( initialDirection + ( rng2D( id.xy, Frame + 0x2111 ) - .5 ) * initialDirectionVariation ) * PI ;
+        newHead.direction           = float2( sin( angle ), cos( angle ) );
+        newHead.speed               = initialSpeed;
+        newHead.angularMomentum     = 0.;
+        newHead.state               = 1;
+        HeadAppendBuffer.Append(newHead);
+    }
+}
+[numthreads(8,8,1)]
+void GetHeadsOnGrid (uint3 id : SV_DispatchThreadID)
 {
     if( id.y % gridSize == 0 & id.x % gridSize == 0)
-    // if( id.x == Size.x>>1 & id.y == Size.y>>1)
     {
         Head newHead;
         newHead.position            = (float2)id.xy + ( rng2DVector2( id.xy , Frame + 0x1111 ) - .5 ) * gridSize;
@@ -57,6 +73,24 @@ void GetHeads (uint3 id : SV_DispatchThreadID)
         newHead.state               = 1;
         HeadAppendBuffer.Append(newHead);
     }
+}
+[numthreads(8,8,1)]
+void GetHeadsOnLine (uint3 id : SV_DispatchThreadID)
+{
+    if( id.y != 10) return;
+    // LineMap[ id.xy ] = float4( 1.0, 0.0, 0.0, 1.0 );
+    if( id.x % gridSize == 0)
+    {
+        Head newHead;
+        newHead.position            = (float2)id.xy + float2( rng2D( id.xy , Frame + 0x1111 ) - .5 , 0.) * gridSize ;
+        float angle = ( initialDirection + ( rng2D( id.xy, Frame + 0x2111 ) - .5 ) * initialDirectionVariation ) * PI ;
+        newHead.direction           = float2( sin( angle ), cos( angle ) );
+        newHead.speed               = initialSpeed;
+        newHead.angularMomentum     = 0.;
+        newHead.state               = 1;
+        HeadAppendBuffer.Append(newHead);
+    }
+    
 }
 [numthreads(8,8,1)]
 void DrawHeads (uint3 id : SV_DispatchThreadID)

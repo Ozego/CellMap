@@ -1,0 +1,18 @@
+{
+    "gridSize": 838,
+    "initialSpeed": 3.6214206218719484,
+    "initialDirection": 0.0,
+    "initialDirectionVariation": 0.6075363159179688,
+    "lineSpawnChance": 0.3233199119567871,
+    "lineAcceleration": 0.996504008769989,
+    "lineSpawnAcceleration": 0.9508333802223206,
+    "lineVariation": 1.3812743425369263,
+    "lineSpawnVariation": 0.013981486670672894,
+    "lineAngularAcceleration": 1.0493594408035279,
+    "lineSpawnAngularAcceleration": 1.0575891733169556,
+    "lineAngularVariation": 0.004192170221358538,
+    "lineSpawnAngularVariation": 1.1795250177383423,
+    "spawnAngle": 2.169004201889038,
+    "spawnAngleVariation": 0.07233379781246185,
+    "boolArray": 0
+}

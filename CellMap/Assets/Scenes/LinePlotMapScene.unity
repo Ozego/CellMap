@@ -249,24 +249,26 @@ MonoBehaviour:
   UseScreenSize: 1
   RandomizeAttributes: 0
   size: {x: 1040, y: 640}
-  gridSize: 256
-  initialSpeed: 4
+  plotMethod: 0
+  gridSize: 800
+  initialSpeed: 5.574553
   initialDirection: 0
-  initialDirectionVariation: 1
-  frameCount: 128
-  lineAcceleration: 0.98
-  lineVariation: 0.27
-  lineAngularAcceleration: 1.05
-  lineAngularVariation: 0.03
-  lineSpawnAcceleration: 1.05
-  lineSpawnVariation: 0.1
-  lineSpawnAngularAcceleration: 0.81
-  lineSpawnAngularVariation: 0.1
-  lineSpawnChance: 0.226
-  spawnAngle: 0
-  spawnAngleVariation: 0.1
-  spawnSymmetrically: 1
+  initialDirectionVariation: 0.23914917
+  frameCount: 256
+  lineAcceleration: 1.0045959
+  lineVariation: 0.0013050047
+  lineAngularAcceleration: 1.3103951
+  lineAngularVariation: 0.0063590524
+  lineSpawnAcceleration: 0.99153304
+  lineSpawnVariation: 0.005536338
+  lineSpawnAngularAcceleration: 1.0260187
+  lineSpawnAngularVariation: 1.1451589
+  lineSpawnChance: 0.53788877
+  spawnAngle: 0.024382213
+  spawnAngleVariation: 0.01948948
+  spawnSymmetrically: 0
   csErrosion: {fileID: 7200000, guid: 8a2d267736dd41141be427275501398f, type: 3}
+  loadFile: {fileID: 0}
 --- !u!1 &1755830155
 GameObject:
   m_ObjectHideFlags: 0
@@ -299,6 +301,7 @@ MonoBehaviour:
   UseScreenSize: 1
   RandomizeAttributes: 0
   size: {x: 744, y: 632}
+  plotMethod: 0
   gridSize: 128
   initialSpeed: 2
   initialDirection: 1
@@ -317,6 +320,7 @@ MonoBehaviour:
   spawnAngleVariation: 0
   spawnSymmetrically: 1
   csErrosion: {fileID: 7200000, guid: 8a2d267736dd41141be427275501398f, type: 3}
+  loadFile: {fileID: 0}
 --- !u!4 &1755830157
 Transform:
   m_ObjectHideFlags: 0

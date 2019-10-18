@@ -9,8 +9,8 @@ public class LinePlotMap : MonoBehaviour
 //  Tag                 Access      Type            Name                        Set
     
     [Header("Line Map Attributes")]
-    [SerializeField]    private     Boolean     UseScreenSize                   = false;
-    [SerializeField]    private     Boolean     RandomizeAttributes             = false;
+    [SerializeField]    private     Boolean     useScreenSize                   = false;
+    [SerializeField]    private     Boolean     randomizeAttributes             = false;
     [Tooltip("Size of the bitmap the lines are plotted on. \nMap size is floored to a multiple of 8")]
     [SerializeField]    private     Vector2Int  size;
     [SerializeField]    private     plotMethods plotMethod;
@@ -109,7 +109,7 @@ public class LinePlotMap : MonoBehaviour
     //Game
     void Awake()
     {
-        if(UseScreenSize)
+        if(useScreenSize)
         {
             size.x = (Screen.width  + 7) & 0xFFF8;
             size.y = (Screen.height + 7) & 0xFFF8;
@@ -196,7 +196,7 @@ public class LinePlotMap : MonoBehaviour
     
     private void SetSaveStateAttributes()
     {
-        if(RandomizeAttributes)
+        if(randomizeAttributes)
         {
             SetRandomSaveStateAttributes();
             return;

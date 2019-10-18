@@ -246,8 +246,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 82822b6d0759be242818db44f84a503d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  UseScreenSize: 1
-  RandomizeAttributes: 0
+  useScreenSize: 1
+  randomizeAttributes: 0
   size: {x: 1040, y: 640}
   plotMethod: 0
   gridSize: 800
@@ -298,8 +298,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 82822b6d0759be242818db44f84a503d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  UseScreenSize: 1
-  RandomizeAttributes: 0
+  useScreenSize: 0
+  randomizeAttributes: 0
   size: {x: 744, y: 632}
   plotMethod: 0
   gridSize: 128

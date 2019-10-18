@@ -21,7 +21,6 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     d = 1. - pow( 1. - d, 32. );
     a += sin( length( uv ) * .01 + iTime * .5 ) * 2.75;
     vec3 col  = d * (.5 + .5 * sin( a + iTime + vec3( 2.9, 1.7, 0 ) ) );
-    //col   = smoothstep( .75, 1.0, vec3( .5 + .5 * sin( a + iTime * -1. ) ) );
-    col *= d;
+    //col   = d * smoothstep( .75, 1.0, vec3( .5 + .5 * sin( a + iTime * -1. ) ) );
     fragColor = vec4( col, 1. );
 }

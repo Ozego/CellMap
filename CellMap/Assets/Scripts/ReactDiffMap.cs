@@ -30,7 +30,7 @@ public class ReactDiffMap : MonoBehaviour
     }
     void Update()
     {
-        for (int i = 0; i < 64; i++)
+        for (int i = 0; i < 8; i++)
         {
             
             int pFrame = rFrame; rFrame++; rFrame %= rFrameCount;
@@ -55,6 +55,7 @@ public class ReactDiffMap : MonoBehaviour
             rTextures[f] = new RenderTexture( size.x, size.y, 24 );
             rTextures[f].enableRandomWrite = true;
             rTextures[f].filterMode = FilterMode.Bilinear;
+            rTextures[f].wrapMode = TextureWrapMode.Repeat;
             rTextures[f].Create();
         }
     }

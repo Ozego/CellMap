@@ -49,9 +49,9 @@
                 // sample the texture
                 fixed4   m = tex2D(_MainTex, i.uv);
                 fixed4 col = fixed4(0.,0.,0.,0.);
-                col.r = 1.-sin(1.2-m.g*3.5);
-                col.g = 1.-sin(1.9-m.g*2.5);
-                col.b = 1.-sin(1.7-m.g*1.5);
+                col.r = 1. - sin( /*sin(_Time.x*1.66) +*/ 1.3 - m.g                 * 2.50 );
+                col.g = 1. - sin( /*sin(_Time.x*1.76) +*/ 1.9 - ( 0.5 * m.r - m.g ) * 1.25 );
+                col.b = 1. - sin( /*sin(_Time.x*1.96) +*/ 1.9 - ( 1.0       - m.r ) * 0.60 );
                 // apply fog
                 UNITY_APPLY_FOG(i.fogCoord, col);
                 return col;

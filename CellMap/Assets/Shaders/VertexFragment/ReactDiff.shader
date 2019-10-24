@@ -3,6 +3,7 @@
     Properties
     {
         _MainTex ("Texture", 2D) = "white" {}
+        _Mask ("Mask", 2D) = "black" {}
         _dXYFK ("diffuse XY, Kill, Feed", Vector) = (0.,0.,0.,0.)
         [HideInInspector] _Size ("Size", Vector) = (0.,0.,0.,0.)
     }
@@ -73,7 +74,7 @@
                     float2 uv : TEXCOORD0;
                     float4 vertex : SV_POSITION;
                 };
-
+    
                 v2f vert (appdata v)
                 {
                     v2f o;
@@ -83,17 +84,18 @@
                 }
 
                 fixed4 _dXYFK;
-
+                sampler2D _Mask;
+                float4 _Mask_ST;
                 fixed4 frag (v2f i) : SV_Target
                 {
                     float U = -length(i.uv-.5);
                     fixed4  map     = tex2D( _MainTex, i.uv );
-                    fixed4  diff    = fixed4(_dXYFK.x , _dXYFK.y ,0.0,0.0) * (cubicBlur(_MainTex, i.uv, 3.)*1.0472-map);//Convolve9x9(_MainTex,i.uv,-1.,.2,.05,.2,.05,.2,.05,.2,.05);
+                    fixed4  diff    = fixed4(_dXYFK.x , _dXYFK.y - tex2D( _Mask, i.uv ).r * .1,0.0,0.0) * (cubicBlur(_MainTex, i.uv, 3.)*1.0472-map);//Convolve9x9(_MainTex,i.uv,-1.,.2,.05,.2,.05,.2,.05,.2,.05);
                     fixed   react   = map.r * map.g * map.g;
-                    fixed   feed    = _dXYFK.z + U*.05, 
+                    fixed   feed    = _dXYFK.z + U  * .05 , 
                             kill    = _dXYFK.w + (i.uv.y-.5)*.04;
-                    map.r += .25 * ( diff.r - react + feed * ( 1. - map.r ));
-                    map.g += (.4 - U *.5) * ( diff.g + react - ( kill + feed ) * map.g);
+                    map.r += .25 * ( diff.r - react + feed * ( 1. - map.r )) ;
+                    map.g += (.4 - U *.5 + tex2D( _Mask, i.uv ).r * .15) * ( diff.g + react - ( kill + feed ) * map.g);
                     map.b = 0.;
                     map.a = 0.;
 

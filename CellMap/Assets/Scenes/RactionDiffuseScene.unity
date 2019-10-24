@@ -149,7 +149,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 62b49423c66587d41bbeff0a865ab86d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  useScreenSize: 1
+  useScreenSize: 0
   size: {x: 1024, y: 1024}
   rMaterial: {fileID: 2100000, guid: 2b4b12a20a1144b44b7d95df783f054b, type: 2}
   initialMap: {fileID: 2800000, guid: f1409d15019215e4b8f7dc8fbc57c004, type: 3}

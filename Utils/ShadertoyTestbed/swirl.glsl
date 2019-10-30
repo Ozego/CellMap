@@ -1,17 +1,22 @@
-float cubicPulse( float c, float w, float x )
+#define PI 3.141592
+#define THETA 2.399963229728653 //THETA is the golden angle in radians: 2 * PI * ( 1 - 1 / PHI )
+vec2 spiralPosition(float t)
 {
-    x = abs(x - c);
-    if( x>w ) return 0.0;
-    x /= w;
-    return 1.0 - x*x*(3.0-2.0*x);
+    float angle = t * THETA - iTime * .001; 
+    float radius = log( ( t + .5 ) * .5 );
+    return vec2( radius * cos( angle ) , radius * sin( angle ) );
 }
-float quadImpulse( float k, float x )
+float impulse( float x )
 {
-    return 2.0*sqrt(k)*x/(1.0+k*x*x);
+    return 1./(x*x+1.);
 }
-float polyImpulse( float k, float n, float x )
+vec2 siralDistortion(vec2 P, float t, float l, float s)
 {
-    return (n/(n-1.0))*pow((n-1.0)*k,1.0/n) * x/(1.0+k*pow(x,n));
+    vec2 U = P;
+    P = vec2(length(P),atan(P.x,P.y));
+    P.y += (1.-P.x)*t+iTime*4.;
+    P = impulse(P.x*l)*(vec2(sin(P.y),cos(P.y))*(P.x)-U);
+    return P*s;
 }
 float checker(float size, vec2 uv)
 {
@@ -22,11 +27,24 @@ float checker(float size, vec2 uv)
 }
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
+    vec2 mouse = iMouse.xy/iResolution.xy-.5;
     vec2 uv = ( fragCoord - .5 * iResolution.xy ) / iResolution.y;
-    uv *=8.;
-    vec2 U = vec2(length(uv), atan(uv.x,uv.y));
-    float t = U.x*16. + U.y;
-    vec2 d1 = vec2(sin(t),cos(t))*polyImpulse(64.,2.,U.x)*.5;
-    vec2 disp = vec2(.5);
-    fragColor = vec4( disp+d1, .5, 1. );
+    uv *=6.;
+    vec2 D = vec2(0.);
+    float a = 0.;
+    float xTime = iTime;
+    for(float i = 0.; i<32.; i++)
+    {
+
+        D += siralDistortion( uv - spiralPosition(i) ,64.,16.,1.);
+        xTime += PI;
+    }
+    float c = checker
+    (
+        8., 
+        uv
+        +vec2(iTime/2.,-iTime)*.1
+        + D
+    );
+    fragColor = vec4( D+.5,c, 1. );
 }

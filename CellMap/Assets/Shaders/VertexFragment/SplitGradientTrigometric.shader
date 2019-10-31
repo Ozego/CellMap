@@ -1,4 +1,4 @@
-﻿Shader "Ozeg/Unlit/TrigometricSplitGradient"
+﻿Shader "Ozeg/Unlit/SplitGradientTrigometric"
 {
     Properties
     {
@@ -58,7 +58,6 @@
 
             fixed4 frag (v2f i) : SV_Target
             {
-                // sample the texture
                 float zoom = cos(max(0.,.5*_Time.y%2.-1.)*2.*PI+PI)+1.;
                 zoom *=.5;
                 i.uv -=.5;
@@ -76,8 +75,6 @@
                         _D
                     );
                 }
-                // if(i.uv.y < .55 & i.uv.y > .45 ) col.rgb = col.rrr;
-                // apply fog
                 UNITY_APPLY_FOG(i.fogCoord, col);
                 return col;
             }

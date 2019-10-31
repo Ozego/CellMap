@@ -1,6 +1,22 @@
-fixed3 TrigGrad (fixed t, fixed3 a, fixed3 b, fixed3 c, fixed3 d)
+fixed3 TrigGrad             (fixed t, fixed3 a, fixed3 b, fixed3 c, fixed3 d)
 {
-    return a + b * cos( TAU * ( c * t + d ) );
+    fixed3 x = c * t + d;
+    return a + b * cos( TAU * x );                                              //7 steps
+}
+fixed3 AsymetricPolyGrad    (fixed t, fixed3 a, fixed3 b, fixed3 c, fixed3 d)
+{
+    fixed3 x = c * t + d;
+    return a + b * x * x * ( 3. - 2. * x );                                     //9 steps
+}
+fixed3 SymetricPolyGrad     (fixed t, fixed3 a, fixed3 b, fixed3 c, fixed3 d)
+{
+    fixed3 x = c * t + d;
+    return a + b * ( 1. - x * x * ( 3. - 2. * abs( x )));                       //11 steps
+}
+fixed3 ExponentialGrad      (fixed t, fixed3 a, fixed3 b, fixed3 c, fixed3 d)
+{
+    fixed3 x = c * t + d;
+    return a + b * x * exp( 1. - x );                                           //8 steps
 }
 fixed Mod (fixed i, fixed m)
 {

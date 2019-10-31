@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
-using Random = UnityEngine.Random;
 
 public class WaveFitter : MonoBehaviour
 {
@@ -53,12 +50,22 @@ public class WaveFitter : MonoBehaviour
         }
         oldFunction = gradientFunction;
     }
+
     void Awake()
     {
         initiate();
     }
+
     void Update()
     {
+        if(Input.GetKeyDown("n")) initiate();
+        if(Input.GetKeyDown("l"))Debug.Log
+        (
+            "A: " + A.x + ", " + A.y + ", " + A.z + ";\n" +
+            "B: " + B.x + ", " + B.y + ", " + B.z + ";\n" +
+            "C: " + C.x + ", " + C.y + ", " + C.z + ";\n" +
+            "D: " + D.x + ", " + D.y + ", " + D.z + "; "
+        );
         step();
     }
 
@@ -79,7 +86,13 @@ public class WaveFitter : MonoBehaviour
         setVectors();
         oldDiff = new Vector4(1f, 1f, 1f, .0f);
     }
-
+    private void setVectors()
+    {
+        material.SetVector("_A", A);
+        material.SetVector("_B", B);
+        material.SetVector("_C", C);
+        material.SetVector("_D", D);
+    }
     private void setTrigValues()
     {
         A = new Vector4(.5f,.5f,.5f,.0f);
@@ -121,7 +134,6 @@ public class WaveFitter : MonoBehaviour
         }
         setVectors();
     }
-
     private void recalcOldDiff(int c)
     {
         gradValues grad = new gradValues();
@@ -179,13 +191,7 @@ public class WaveFitter : MonoBehaviour
         grad.diff /= (float)sampleCount;
     }
 
-    private void setVectors()
-    {
-        material.SetVector("_A", A);
-        material.SetVector("_B", B);
-        material.SetVector("_C", C);
-        material.SetVector("_D", D);
-    }
+
     private float getTrigGradValue (float t, float a, float b, float c, float d)
     {
         return Mathf.Clamp01(a + b * Mathf.Cos( Mathf.PI * 2f * ( c * t + d ) ));

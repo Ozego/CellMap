@@ -83,33 +83,33 @@ public class WaveFitter : MonoBehaviour
     private void setTrigValues()
     {
         A = new Vector4(.5f,.5f,.5f,.0f);
-        B = new Vector4(.5f,.5f,.5f,.0f);
+        B = new Vector4(.5f,.5f,.5f, 0f);
         C = new Vector4( 1f, 1f, 1f,.0f);
         D = new Vector4(.5f,.5f,.5f,.0f);
         material = new Material(Shader.Find("Ozeg/Unlit/SplitGradientTrigometric"));
     }
     private void setAsymetricPolyValues()
     {
-        A = new Vector4( 0f, 0f, 0f, 0f);
-        B = new Vector4( 1f, 1f, 1f, 0f);
+        A = new Vector4(.5f,.5f,.5f,.0f);
+        B = new Vector4( 0f, 0f, 0f, 0f);
         C = new Vector4( 0f, 0f, 0f, 0f);
         D = new Vector4(-1f,-1f,-1f, 0f);
         material = new Material(Shader.Find("Ozeg/Unlit/SplitGradientAsymetricPoly"));
     }
     private void setSymetricPolyValues()
     {
-        A = new Vector4( 0f, 0f, 0f, 0f);
-        B = new Vector4( 1f, 1f, 1f, 0f);
+        A = new Vector4(.5f,.5f,.5f,.0f);
+        B = new Vector4( 0f, 0f, 0f, 0f);
         C = new Vector4( 2f, 2f, 2f, 2f);
         D = new Vector4(-1f,-1f,-1f, 0f);
         material = new Material(Shader.Find("Ozeg/Unlit/SplitGradientSymetricPoly"));
     }
     private void setExponentialValues()
     {
-        A = new Vector4(0f,0f,0f,0f);
-        B = new Vector4(1f,1f,1f,0f);
-        C = new Vector4(0f,0f,0f,0f);
-        D = new Vector4(0f,0f,0f,0f);
+        A = new Vector4(.5f,.5f,.5f,.0f);
+        B = new Vector4( 0f, 0f, 0f, 0f);
+        C = new Vector4( 0f, 0f, 0f, 0f);
+        D = new Vector4( 0f, 0f, 0f, 0f);
         material = new Material(Shader.Find("Ozeg/Unlit/SplitGradientExponential"));
     }
 

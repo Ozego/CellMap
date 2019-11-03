@@ -58,11 +58,11 @@
 
             fixed4 frag (v2f i) : SV_Target
             {
-                float zoom = cos(max(0.,.5*_Time.y%2.-1.)*2.*PI+PI)+1.;
-                zoom *=.5;
-                i.uv -=.5;
-                i.uv*=1.+zoom;
-                i.uv +=.5;
+                // float zoom = cos(max(0.,.5*_Time.y%4.-3.)*2.*PI+PI)+1.;
+                // zoom *=.5;
+                // i.uv -=.5;
+                // i.uv*=1.+zoom;
+                // i.uv +=.5;
                 fixed4 col = tex2D(_MainTex, float2(i.uv.x, _p));
                 if(i.uv.y < .5)
                 {

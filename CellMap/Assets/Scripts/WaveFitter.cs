@@ -7,6 +7,8 @@ public class WaveFitter : MonoBehaviour
     [SerializeField] private Texture2D  gradients;
     [SerializeField] private float      gradientPosition;
     [SerializeField] private bool       useRandomPosition;
+    [SerializeField] private bool       clamp;
+    [SerializeField] private bool       jitter;
     [SerializeField] private int        sampleCount;
     [SerializeField] private int        variationCount;
     [SerializeField] private gFuncs     gradientFunction;
@@ -175,7 +177,7 @@ public class WaveFitter : MonoBehaviour
         grad.diff = 0f;
         for (int s = 0; s < sampleCount; s++)
         {
-            float point = ((float)s + .25f) / (float)sampleCount;
+            float point = ( (float)s + ( jitter ? Random.value : .5f ) )  / (float)sampleCount;
             float sVal = gradients.GetPixelBilinear(point, gradientPosition)[c];
             float gVal = 0f;
             switch (gradientFunction)
@@ -185,7 +187,7 @@ public class WaveFitter : MonoBehaviour
                 case gFuncs.symetricPolynomial:     gVal = getSymetricPolyGradValue(  point, grad.a, grad.b, grad.c, grad.d ); break;
                 case gFuncs.exponential:            gVal = getExponentialGradValue(   point, grad.a, grad.b, grad.c, grad.d ); break;
             }
-            gVal = Mathf.Clamp01(gVal);
+            if(clamp) gVal = Mathf.Clamp01(gVal);
             grad.diff += Mathf.Abs(sVal - gVal);
         }
         grad.diff /= (float)sampleCount;

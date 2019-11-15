@@ -48,7 +48,7 @@
                 fixed w = tex2D(_MainTex, i.uv - float2( _Size.x, 0. )).b;
                 fixed4 col = tex2D(_MainTex, i.uv);
                 // just invert the colors
-                col.rg -= fixed2(e-w,n-s);
+                col.rg -= fixed2(e-w,n-s)/4.;
                 return col;
             }
             ENDCG

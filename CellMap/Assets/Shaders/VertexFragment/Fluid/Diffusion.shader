@@ -45,7 +45,7 @@
 
             fixed4 frag (v2f i) : SV_Target
             {
-                float a = 32.;
+                float a = 4.;
                 float b = 1/(4 + a);
                 fixed4 n = tex2D(_MainTex, i.uv + float2( 0., _Size.y ));
                 fixed4 e = tex2D(_MainTex, i.uv + float2( _Size.x, 0. ));

@@ -47,17 +47,20 @@ public class FluidMap : MonoBehaviour
         int pFrame = rFrame; rFrame++; rFrame %= rFrameCount;
         Graphics.Blit(vectorMap[pFrame],advectionMap,Advection,0);
         Diffusion.SetTexture("_Advection", advectionMap);
-        for (int i = 0; i < 16; i++)
+        for (int i = 0; i < 64; i++)
         {
             Graphics.Blit(vectorMap[pFrame],vectorMap[rFrame],Diffusion,0);
             pFrame = rFrame; rFrame++; rFrame %= rFrameCount;
         }
         Forces.SetTexture("_ForceMap", ForceMap);
         Graphics.Blit(vectorMap[pFrame],vectorMap[rFrame],Forces,0);
-        pFrame = rFrame; rFrame++; rFrame %= rFrameCount;
-        Graphics.Blit(vectorMap[pFrame],vectorMap[rFrame],Pressure,0);
-        pFrame = rFrame; rFrame++; rFrame %= rFrameCount;
-        Graphics.Blit(vectorMap[pFrame],vectorMap[rFrame],PressureSubstraction,0);
+        for (int i = 0; i < 64; i++)
+        {
+            pFrame = rFrame; rFrame++; rFrame %= rFrameCount;
+            Graphics.Blit(vectorMap[pFrame],vectorMap[rFrame],Pressure,0);
+            pFrame = rFrame; rFrame++; rFrame %= rFrameCount;
+            Graphics.Blit(vectorMap[pFrame],vectorMap[rFrame],PressureSubstraction,0);
+        }
         rRenderer.material.SetTexture( "_MainTex", vectorMap[rFrame] );
     }
     void GenerateDisplay()

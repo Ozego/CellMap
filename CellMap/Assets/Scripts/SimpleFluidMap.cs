@@ -6,6 +6,12 @@ using UnityEngine;
 public class SimpleFluidMap : MonoBehaviour
 {
     [SerializeField] private Texture2D initMap;
+    [SerializeField] private Texture2D mask;
+    [SerializeField] [Range( -1f, 20f )] private float flowAdvection         = 1.0f;
+    [SerializeField] [Range(  0f, 1f  )] private float flowDiffusion         = 0.1f;
+    [SerializeField] [Range( -1f, 2f  )] private float pressureDissipation   = 1.0f;
+    [SerializeField] [Range( -1f, 3f  )] private float pressureVelocity      = 1.0f;
+
     [SerializeField] private Boolean useScreenSize;
     [SerializeField] private Vector2Int size;
     [SerializeField] private Material rMaterial;
@@ -14,19 +20,35 @@ public class SimpleFluidMap : MonoBehaviour
     private RenderTexture[]     rTextures       = new RenderTexture[rFrameCount];
     private MeshRenderer        rRenderer;
 
-    void OnValidate(){}
+    void OnValidate()
+    { 
+        SetMaterialProperties(); 
+    }
     void OnGizmos(){}
     void Awake()
     {
-        if(useScreenSize)
+        if (useScreenSize)
         {
             size.x = (Screen.width  + 7) & 0xFFF8;
             size.y = (Screen.height + 7) & 0xFFF8;
         }
-        Vector4 sizeVector = new Vector4( 1f/size.x, 1f/size.y, size.x, size.y );
-        rMaterial.SetVector("_Size", sizeVector );
-        GenerateDisplay(); GenerateMaps();
+        Vector4 sizeVector = new Vector4(1f / size.x, 1f / size.y, size.x, size.y);
+        rMaterial.SetVector(  "_Size",                  sizeVector          );
+        SetMaterialProperties();
+        GenerateDisplay(); 
+        GenerateMaps();
     }
+
+    private void SetMaterialProperties()
+    {
+        rMaterial.SetTexture( "_Mask",                  mask                );
+        rMaterial.SetFloat(   "_FlowAdvection",         flowAdvection       );
+        rMaterial.SetFloat(   "_FlowDiffusion",         flowDiffusion       );
+        rMaterial.SetFloat(   "_PressureDissipation",   pressureDissipation );
+        rMaterial.SetFloat(   "_PressureVelocity",      pressureVelocity    );
+    }   
+
+    bool materialToggle = false;
     void Update()
     {
         rMaterial.SetFloat("_Frame",(float)Time.frameCount);
@@ -37,6 +59,26 @@ public class SimpleFluidMap : MonoBehaviour
             Graphics.Blit(rTextures[pFrame],rTextures[rFrame],rMaterial,i);
         }
         rRenderer.material.SetTexture( "_MainTex", rTextures[rFrame] );
+        if(Input.GetKeyDown("d"))
+        {
+            materialToggle = !materialToggle;
+            if(materialToggle)
+            {
+                rRenderer.material = new Material( Shader.Find( "Unlit/Texture" ) );
+            }
+            else
+            {
+                rRenderer.material = new Material( Shader.Find( "Ozeg/Unlit/VectorFieldDisplay" ) );
+            }
+        } 
+        if(Input.GetKeyDown("r"))
+        {
+            for(int f = 0; f < rFrameCount; f++)
+            {
+                Graphics.Blit(initMap,rTextures[f],rMaterial,0);
+            }
+        }
+        
     }
     void GenerateDisplay()
     {

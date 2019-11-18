@@ -149,7 +149,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1fb7fa2d18b2c2b44ad354d83bc70644, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  initMap: {fileID: 2800000, guid: de5173b5da6f41445bbc28b31c3f64d1, type: 3}
+  initMap: {fileID: 2800000, guid: c41e90157d5ca9d4280ffada41dc9a4e, type: 3}
+  mask: {fileID: 0}
+  flowAdvection: 8
+  flowDiffusion: 0.4
+  pressureDissipation: 0.999
+  pressureVelocity: 0.44
   useScreenSize: 0
   size: {x: 512, y: 512}
   rMaterial: {fileID: 2100000, guid: cdecabd6c65ca1e49814626655c9d62f, type: 2}

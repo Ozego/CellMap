@@ -2,17 +2,22 @@
 {
     Properties
     {
-        _Intensity ( "Flow Intensity",  Float ) = 0
-        _MainTex   ( "Texture",         2D )    = "white" {}
         _Blue      ( "BlueNoise",       2D )    = "grey" {}
-
-        [HideInInspector] _Frame ( "",  Float ) = 0
-        [HideInInspector] _Size  ( "", Vector ) = (0,0,0,0)
+        [HideInInspector] _Intensity            ( "", Float ) = 0
+        [HideInInspector] _MainTex              ( "", 2D )    = "white" {}
+        [HideInInspector] _Mask                 ( "", 2D )    = "white" {}
+        [HideInInspector] _FlowAdvection        ( "", Float ) = 0
+        [HideInInspector] _FlowDiffusion        ( "", Float ) = 0
+        [HideInInspector] _PressureDissipation  ( "", Float ) = 0
+        [HideInInspector] _PressureVelocity     ( "", Float ) = 0
+        [HideInInspector] _Frame                ( "", Float ) = 0
+        [HideInInspector] _Size                 ( "", Vector ) = (0,0,0,0)
     }
     CGINCLUDE
         fixed  mod1(fixed t) { t%=1.; t+=1.; t%=1.; return t; }
         fixed2 mod1(fixed2 t) { return fixed2(mod1(t.x),mod1(t.y)); }
         fixed4 mod2D (sampler2D tex, half2 uv) { return tex2D(tex,mod1(uv)); }
+
     ENDCG
     SubShader
     {
@@ -58,6 +63,8 @@
             }
             float       _Frame;
             half        _Intensity;
+            half        _FlowAdvection;
+            half        _FlowDiffusion;
             half4       _Size;
             sampler2D   _Blue;
             sampler2D   _MainTex;
@@ -73,9 +80,10 @@
 
                 fixed2 vecField = (sN+sS+sE+sW)/4.;
                 fixed4 n = mod2D(_Blue, (i.uv-_Frame.xx*31./128.) * _Size.zw / half2(128.,128.)); n += _Frame*127./256.; n %=1.; 
-                col = mod2D(_MainTex,i.uv - _Size.xy * vecField * _Intensity * n.rg);
-                // vecField /= 2.; vecField += .5;
+                col = mod2D(_MainTex,i.uv - _Size.xy * vecField * _FlowAdvection * n.rg);
+                vecField /= 2.; vecField += .5;
                 // col.rg += vecField; col.rg /= 2.;
+                col.rg = lerp(col.rg,vecField,_FlowDiffusion);
                 return col;
             }
             ENDCG
@@ -96,6 +104,7 @@
                 return o;
             }
             half4       _Size;
+            half        _PressureDissipation;
             sampler2D   _MainTex;
             fixed4 frag (v2f i) : SV_Target
             {
@@ -104,6 +113,7 @@
                 fixed2 W = mod2D(_MainTex, i.uv - _Size.xy * half2(-1., 0.) ); W -= .5;
                 fixed2 N = mod2D(_MainTex, i.uv - _Size.xy * half2( 0., 1.) ); N -= .5;
                 fixed2 S = mod2D(_MainTex, i.uv - _Size.xy * half2( 0.,-1.) ); S -= .5;
+                col.b *= _PressureDissipation;
                 col.b += (E.x-W.x+N.y-S.y);
                 return col;
             }
@@ -126,6 +136,8 @@
             }
             float       _Frame;
             half4       _Size;
+            half        _FlowAdvection;
+            half        _PressureVelocity;
             sampler2D   _MainTex;
             sampler2D   _Blue;
             fixed4 frag (v2f i) : SV_Target
@@ -137,8 +149,8 @@
                 fixed N = mod2D(_MainTex, i.uv - _Size.xy * ( half2( 0., 1.))).b; N -= .5; 
                 fixed S = mod2D(_MainTex, i.uv - _Size.xy * ( half2( 0.,-1.))).b; S -= .5; 
                 fixed4 n = mod2D(_Blue, (i.uv-_Frame.xx*31./128.) * _Size.zw / half2(128.,128.)); n += _Frame*127./256.; n %=1.; 
-                col.x -= (W-E)/4.*n.x;
-                col.y -= (S-N)/4.*n.y;
+                col.x -= _PressureVelocity*(W-E)/4.*n.x;
+                col.y -= _PressureVelocity*(S-N)/4.*n.y;
                 col.b = (E+W+N+S)/4.+.5;
                 return col;
             }

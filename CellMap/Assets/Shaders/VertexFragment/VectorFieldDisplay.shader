@@ -47,19 +47,20 @@
             }
             fixed4 frag (v2f i) : SV_Target
             {
-                fixed3 A1 = fixed3( 0.3516223, 0.3304761, 0.302406   );
-                fixed3 B1 = fixed3( 0.1052759, 0.05755135,0.05643922 );
-                fixed3 C1 = fixed3( 1.102913,  1.226833,  1.067767   );
-                fixed3 D1 = fixed3( 0.8503879,-0.1020436, 0.10597    );
+                fixed2 t = fixed2(sin(0.25),cos(0.25));
+                fixed3 A1 = fixed3( 0.4, 0.4, 0.4 );
+                fixed3 B1 = fixed3( 0.1, 0.1, 0.1 );
+                fixed3 C1 = fixed3( 1.0, 1.0, 1.0 );
+                fixed3 D1 = fixed3( 1.0, 0.1, 0.2 );
  
-                fixed3 A2 = fixed3( 0.3647464, 0.06267976,-0.0914705 );
-                fixed3 B2 = fixed3( 0.3347345, 0.6997244, 0.8427896  );
-                fixed3 C2 = fixed3( 0.9521945, 0.8963341, 0.856208   );
-                fixed3 D2 = fixed3( 0.6377438, 0.8108976, 0.8512102  ); 
+                fixed3 A2 = fixed3( 0.2, 0.0,-0.2 );
+                fixed3 B2 = fixed3( 0.6, 0.6, 0.6 );
+                fixed3 C2 = fixed3( 1.0, 0.8, 0.8 );
+                fixed3 D2 = fixed3( 0.6, 0.8, 0.9 ); 
 
                 // sample the texture
-                fixed2 ld1 = normalize(fixed2(-0.25, 0.75));
-                fixed2 ld2 = normalize(fixed2( 0.85, 0.15));
+                fixed2 ld1 = fixed2( t.x,-t.y );
+                fixed2 ld2 = fixed2( t.x, t.y );
                 fixed4 col = fixed4(0.,0.,0.,1.);
                 fixed4 vec = tex2D(_MainTex, i.uv);
                 vec.xy -= .5;

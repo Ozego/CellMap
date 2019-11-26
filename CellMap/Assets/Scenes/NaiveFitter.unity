@@ -265,13 +265,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   restart: 0
-  gradients: {fileID: 2800000, guid: 531a86b19f1a1e048a5c7b016eefef76, type: 3}
+  gradients: {fileID: 2800000, guid: 4351582c874346244bae6d51e0bad395, type: 3}
   gradientPosition: 0.7877345
   useRandomPosition: 1
   clamp: 1
   jitter: 0
-  sampleCount: 8
-  variationCount: 512
+  sampleCount: 64
+  variationCount: 128
   gradientFunction: 0
 --- !u!23 &918157242
 MeshRenderer:

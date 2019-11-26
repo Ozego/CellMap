@@ -149,14 +149,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1fb7fa2d18b2c2b44ad354d83bc70644, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  initMap: {fileID: 2800000, guid: c41e90157d5ca9d4280ffada41dc9a4e, type: 3}
+  initMap: {fileID: 2800000, guid: 62f9672b025aed642907b86de0691f91, type: 3}
   mask: {fileID: 0}
-  flowAdvection: 8
-  flowDiffusion: 0.4
-  pressureDissipation: 0.999
-  pressureVelocity: 0.44
+  display: {fileID: 2800000, guid: e89d4b3f5d4043e419fab0e2c984ef36, type: 3}
+  flowAdvection: 3
+  flowDiffusion: 1
+  pressureDissipation: 1
+  pressureVelocity: 1
   useScreenSize: 0
-  size: {x: 512, y: 512}
+  size: {x: 2048, y: 2048}
   rMaterial: {fileID: 2100000, guid: cdecabd6c65ca1e49814626655c9d62f, type: 2}
 --- !u!4 &788902752
 Transform:

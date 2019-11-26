@@ -86,7 +86,7 @@ public class WaveFitter : MonoBehaviour
         material.SetTexture("_MainTex", gradients);
         material.SetFloat("_p", gradientPosition);
         setVectors();
-        oldDiff = new Vector4(1f, 1f, 1f, .0f);
+        oldDiff = new Vector4(1.5f, 1.5f, 1.5f, .0f);
     }
     private void setVectors()
     {
@@ -153,10 +153,10 @@ public class WaveFitter : MonoBehaviour
         for (int v = 0; v < variationCount; v++)
         {
             gradValues grad = new gradValues();
-            grad.a = A[c] + Random.Range( -oldDiff[c]/2f, oldDiff[c]/2f );
-            grad.b = B[c] + Random.Range( -oldDiff[c]/2f, oldDiff[c]/2f );
-            grad.c = C[c] + Random.Range( -oldDiff[c]/4f, oldDiff[c]/4f );
-            grad.d = D[c] + Random.Range( -oldDiff[c]/2f, oldDiff[c]/2f );
+            grad.a = A[c] + Random.Range( -oldDiff[c]/1.5f, oldDiff[c]/1.5f );
+            grad.b = B[c] + Random.Range( -oldDiff[c]/1.5f, oldDiff[c]/1.5f );
+            grad.c = C[c] + Random.Range( -oldDiff[c]/5.0f, oldDiff[c]/5.0f );
+            grad.d = D[c] + Random.Range( -oldDiff[c]/1.5f, oldDiff[c]/1.5f );
             setGradDiff(c, grad); 
             grads.Add(grad);
         }
